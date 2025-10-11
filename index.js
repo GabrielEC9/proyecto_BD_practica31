@@ -1,17 +1,34 @@
-import express from 'express';
-import { supabase } from './supabaseClient.js';
+import express from 'express'
+import { supabase } from './supabaseClient.js'
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+const app = express()
+const port = process.env.PORT || 3000
 
-app.use(express.static('public'));
+app.use(express.static('public'))
+app.use(express.json())
 
+// Endpoint para obtener clientes con sus vehículos
 app.get('/api/clientes', async (req, res) => {
-  const { data, error } = await supabase.from('cliente').select('*');
-  if (error) return res.status(500).send(error.message);
-  res.json(data);
-});
+  const { data, error } = await supabase
+    .from('cliente')
+    .select(`*, vehiculo(*)`)
+  if (error) return res.status(500).json({ error: error.message })
+  res.json(data)
+})
 
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`);
-});
+// Endpoint para obtener órdenes con servicios y vehículos
+app.get('/api/ordenes', async (req, res) => {
+  const { data, error } = await supabase
+    .from('orden_trabajo')
+    .select(`
+      *,
+      vehiculo(*),
+      servicio(*)
+    `)
+  if (error) return res.status(500).json({ error: error.message })
+  res.json(data)
+})
+
+app.listen(port, () => {
+  console.log(`Servidor corriendo en http://localhost:${port}`)
+})

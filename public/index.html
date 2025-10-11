@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Clientes</title>
+</head>
+<body>
+  <h1>Lista de Clientes</h1>
+  <table border="1" id="tabla-clientes">
+    <tr>
+      <th>ID</th>
+      <th>Nombre</th>
+      <th>Teléfono</th>
+      <th>Dirección</th>
+    </tr>
+  </table>
+  <script>
+    fetch('/api/clientes')
+      .then(res => res.json())
+      .then(data => {
+        const tabla = document.getElementById('tabla-clientes');
+        data.forEach(c => {
+          const row = document.createElement('tr');
+          row.innerHTML = `<td>${c.id_cliente}</td><td>${c.nombre}</td><td>${c.telefono || ''}</td><td>${c.direccion || ''}</td>`;
+          tabla.appendChild(row);
+        });
+      });
+  </script>
+</body>
+</html>

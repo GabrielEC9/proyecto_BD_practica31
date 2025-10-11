@@ -1,0 +1,13 @@
+{
+  "name": "proyecto_BD_practica31",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.35.0"
+  }
+}

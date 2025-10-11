@@ -3,95 +3,121 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestión Taller Automotriz</title>
+<title>Taller Automotriz Interactivo</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
 <style>
-  body { background: #f0f2f5; padding: 20px; font-family: Arial, sans-serif; }
-  h1 { text-align: center; margin-bottom: 30px; color: #333; }
-  .card { margin-bottom: 20px; }
-  .vehiculos { margin-top: 10px; }
-  .orden { border-left: 5px solid #4CAF50; padding: 10px; margin-bottom: 10px; background: #fff; border-radius: 5px; }
-  .prioritaria { border-left-color: #FF4136; }
-  .no-prioritaria { border-left-color: #007BFF; }
+  body { background: #f4f6f9; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+  h1 { text-align: center; margin-bottom: 30px; color: #222; font-weight: bold; }
+  .menu { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; }
+  .card { margin-bottom: 20px; transition: transform 0.2s; }
+  .card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+  .vehiculos { margin-top: 10px; padding-left: 15px; }
+  .orden { padding: 15px; margin-bottom: 12px; border-radius: 10px; background: #fff; box-shadow: 0 3px 10px rgba(0,0,0,0.05); transition: transform 0.2s; }
+  .orden:hover { transform: scale(1.02); }
+  .prioritaria { border-left: 6px solid #FF4136; }
+  .no-prioritaria { border-left: 6px solid #007BFF; }
   .tablero { display: flex; gap: 20px; flex-wrap: wrap; }
-  .columna { flex: 1; min-width: 250px; }
+  .columna { flex: 1; min-width: 280px; }
+  .accordion-button { cursor: pointer; }
+  .no-vehiculos { font-style: italic; color: #777; }
 </style>
 </head>
 <body>
 
-<h1>Taller Automotriz Interactivo</h1>
+<h1><i class="fas fa-tools"></i> Taller Automotriz Interactivo</h1>
+
+<div class="menu">
+  <button class="btn btn-primary" onclick="mostrarSeccion('clientes')"><i class="fas fa-users"></i> Clientes</button>
+  <button class="btn btn-secondary" onclick="mostrarSeccion('ordenes')"><i class="fas fa-clipboard-list"></i> Órdenes de Trabajo</button>
+</div>
 
 <div class="container">
-  <h2>Clientes y Vehículos</h2>
-  <div id="clientes-section" class="row"></div>
 
-  <h2>Órdenes de Trabajo</h2>
-  <div class="tablero" id="ordenes-section">
-    <div class="columna">
-      <h5>Pendientes</h5>
-      <div id="pendientes"></div>
-    </div>
-    <div class="columna">
-      <h5>En Progreso</h5>
-      <div id="en-progreso"></div>
-    </div>
-    <div class="columna">
-      <h5>Completadas</h5>
-      <div id="completadas"></div>
+  <div id="clientes-section">
+    <h2>Clientes y Vehículos</h2>
+    <div id="clientes-container" class="row"></div>
+  </div>
+
+  <div id="ordenes-section" style="display:none;">
+    <h2>Órdenes de Trabajo</h2>
+    <div class="tablero">
+      <div class="columna">
+        <h5>Pendientes</h5>
+        <div id="pendientes"></div>
+      </div>
+      <div class="columna">
+        <h5>En Progreso</h5>
+        <div id="en-progreso"></div>
+      </div>
+      <div class="columna">
+        <h5>Completadas</h5>
+        <div id="completadas"></div>
+      </div>
     </div>
   </div>
+
 </div>
 
 <script>
+function mostrarSeccion(seccion) {
+  document.getElementById('clientes-section').style.display = seccion === 'clientes' ? 'block' : 'none';
+  document.getElementById('ordenes-section').style.display = seccion === 'ordenes' ? 'block' : 'none';
+}
+
 async function cargarClientes() {
-  const res = await fetch('/api/clientes')
-  const clientes = await res.json()
-  const contenedor = document.getElementById('clientes-section')
+  const res = await fetch('/api/clientes');
+  const clientes = await res.json();
+  const contenedor = document.getElementById('clientes-container');
+  contenedor.innerHTML = '';
   clientes.forEach(c => {
-    const card = document.createElement('div')
-    card.className = 'col-md-4'
+    const card = document.createElement('div');
+    card.className = 'col-md-4';
     card.innerHTML = `
       <div class="card p-3">
-        <h5>${c.nombre}</h5>
-        <p>Tel: ${c.telefono || ''}</p>
-        <p>Dir: ${c.direccion || ''}</p>
-        <button class="btn btn-sm btn-primary toggle-veh">Ver Vehículos</button>
+        <h5><i class="fas fa-user"></i> ${c.nombre}</h5>
+        <p><i class="fas fa-phone"></i> ${c.telefono || '-'}</p>
+        <p><i class="fas fa-map-marker-alt"></i> ${c.direccion || '-'}</p>
+        <button class="btn btn-sm btn-outline-primary toggle-veh"><i class="fas fa-car"></i> Ver Vehículos</button>
         <div class="vehiculos mt-2" style="display:none;">
-          ${c.vehiculo.map(v => `<div>${v.marca} ${v.modelo} (${v.año}) - Placas: ${v.placas}</div>`).join('')}
+          ${c.vehiculo && c.vehiculo.length > 0 ? 
+            c.vehiculo.map(v => `<div><i class="fas fa-car-side"></i> ${v.marca} ${v.modelo} (${v.año}) - Placas: ${v.placas}</div>`).join('') : 
+            '<div class="no-vehiculos">No tiene vehículos</div>'}
         </div>
-      </div>`
-    const btn = card.querySelector('.toggle-veh')
-    const vehDiv = card.querySelector('.vehiculos')
+      </div>`;
+    const btn = card.querySelector('.toggle-veh');
+    const vehDiv = card.querySelector('.vehiculos');
     btn.addEventListener('click', () => {
-      vehDiv.style.display = vehDiv.style.display === 'none' ? 'block' : 'none'
-    })
-    contenedor.appendChild(card)
-  })
+      vehDiv.style.display = vehDiv.style.display === 'none' ? 'block' : 'none';
+    });
+    contenedor.appendChild(card);
+  });
 }
 
 async function cargarOrdenes() {
-  const res = await fetch('/api/ordenes')
-  const ordenes = await res.json()
+  const res = await fetch('/api/ordenes');
+  const ordenes = await res.json();
+  document.getElementById('pendientes').innerHTML = '';
+  document.getElementById('en-progreso').innerHTML = '';
+  document.getElementById('completadas').innerHTML = '';
   ordenes.forEach(o => {
-    const div = document.createElement('div')
-    div.className = `orden ${o.orden_prioritaria ? 'prioritaria' : 'no-prioritaria'}`
+    const div = document.createElement('div');
+    div.className = `orden ${o.orden_prioritaria ? 'prioritaria' : 'no-prioritaria'}`;
     div.innerHTML = `
       <strong>ID: ${o.id_orden}</strong> <br>
-      Vehículo: ${o.vehiculo?.marca || ''} ${o.vehiculo?.modelo || ''} <br>
-      Cliente: ${o.vehiculo?.cliente?.nombre || ''} <br>
-      Servicio: ${o.servicio?.descripcion || ''} ($${o.servicio?.costo || ''}) <br>
-      Estado: ${o.estado_pago || ''}`
-    
+      <i class="fas fa-car-side"></i> Vehículo: ${o.vehiculo?.marca || '-'} ${o.vehiculo?.modelo || '-'} <br>
+      <i class="fas fa-user"></i> Cliente: ${o.vehiculo?.cliente?.nombre || '-'} <br>
+      <i class="fas fa-wrench"></i> Servicio: ${o.servicio?.descripcion || '-'} ($${o.servicio?.costo || '-'}) <br>
+      <i class="fas fa-dollar-sign"></i> Estado: ${o.estado_pago || '-'}`;
     if(o.estado_pago === 'Pendiente') document.getElementById('pendientes').appendChild(div)
     else if(o.estado_pago === 'En progreso') document.getElementById('en-progreso').appendChild(div)
     else document.getElementById('completadas').appendChild(div)
-  })
+  });
 }
 
-cargarClientes()
-cargarOrdenes()
+cargarClientes();
+cargarOrdenes();
 </script>
 
 </body>
 </html>
-

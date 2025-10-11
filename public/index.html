@@ -1,29 +1,109 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <title>Clientes</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Clientes</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f7f9;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    #search {
+      display: block;
+      margin: 20px auto;
+      width: 50%;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    table {
+      width: 90%;
+      margin: 0 auto;
+      border-collapse: collapse;
+      background-color: #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    td {
+      color: #555;
+    }
+  </style>
 </head>
 <body>
   <h1>Lista de Clientes</h1>
-  <table border="1" id="tabla-clientes">
-    <tr>
-      <th>ID</th>
-      <th>Nombre</th>
-      <th>Teléfono</th>
-      <th>Dirección</th>
-    </tr>
+  <input type="text" id="search" placeholder="Buscar por nombre...">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Teléfono</th>
+        <th>Dirección</th>
+      </tr>
+    </thead>
+    <tbody id="tabla-clientes"></tbody>
   </table>
+
   <script>
-    fetch('/api/clientes')
-      .then(res => res.json())
-      .then(data => {
-        const tabla = document.getElementById('tabla-clientes');
-        data.forEach(c => {
-          const row = document.createElement('tr');
-          row.innerHTML = `<td>${c.id_cliente}</td><td>${c.nombre}</td><td>${c.telefono || ''}</td><td>${c.direccion || ''}</td>`;
-          tabla.appendChild(row);
-        });
+    let clientes = [];
+
+
+    async function cargarClientes() {
+      const res = await fetch('/api/clientes');
+      clientes = await res.json();
+      mostrarClientes(clientes);
+    }
+
+
+    function mostrarClientes(datos) {
+      const tabla = document.getElementById('tabla-clientes');
+      tabla.innerHTML = '';
+      datos.forEach(c => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${c.id_cliente}</td>
+          <td>${c.nombre}</td>
+          <td>${c.telefono || ''}</td>
+          <td>${c.direccion || ''}</td>
+        `;
+        tabla.appendChild(row);
       });
+    }
+
+
+    document.getElementById('search').addEventListener('input', (e) => {
+      const filtro = e.target.value.toLowerCase();
+      const filtrados = clientes.filter(c => c.nombre.toLowerCase().includes(filtro));
+      mostrarClientes(filtrados);
+    });
+
+    cargarClientes();
   </script>
 </body>
 </html>

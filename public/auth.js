@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = 'https://lvuqrksujmgwgvebokgw.supabase.co'
-const SUPABASE_KEY = 'SUPABASE_CLIENT_API_KEY'
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2dXFya3N1am1nd2d2ZWJva2d3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxNzA0NzIsImV4cCI6MjA3NTc0NjQ3Mn0.-r4fp5yQi1pH2qHmbEbhm-6Q_4WgXc_yrr3JQZpGJV4'
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 
@@ -33,4 +33,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   })
 })
+
 

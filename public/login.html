@@ -1,34 +1,35 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Inicio de Sesión</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inicio de Sesión</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 flex items-center justify-center h-screen">
-  <div class="bg-white p-8 rounded-2xl shadow-lg w-96">
-    <h1 class="text-2xl font-bold mb-6 text-center text-blue-600">Iniciar Sesión</h1>
-    
-    <form id="login-form" class="space-y-4">
-      <div>
-        <label for="email" class="block text-gray-700 font-medium">Correo electrónico</label>
-        <input type="email" id="email" class="w-full p-2 border rounded-lg focus:ring focus:ring-blue-300" placeholder="correo@ejemplo.com" required />
-      </div>
 
-      <div>
-        <label for="password" class="block text-gray-700 font-medium">Contraseña</label>
-        <input type="password" id="password" class="w-full p-2 border rounded-lg focus:ring focus:ring-blue-300" placeholder="********" required />
-      </div>
+<div class="bg-white p-8 rounded-2xl shadow-lg w-96">
+  <h1 class="text-2xl font-bold mb-6 text-center text-blue-600">Iniciar Sesión</h1>
 
-      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">
-        Entrar
-      </button>
+  <form id="login-form" class="space-y-4">
+    <div>
+      <label for="email" class="block text-gray-700 font-medium">Correo electrónico</label>
+      <input type="email" id="email" class="w-full p-2 border rounded-lg focus:ring focus:ring-blue-300" placeholder="correo@ejemplo.com" required />
+    </div>
 
-      <p id="error-message" class="text-red-600 text-sm text-center mt-2 hidden"></p>
-    </form>
-  </div>
+    <div>
+      <label for="password" class="block text-gray-700 font-medium">Contraseña</label>
+      <input type="password" id="password" class="w-full p-2 border rounded-lg focus:ring focus:ring-blue-300" placeholder="********" required />
+    </div>
 
-  <script type="module" src="auth.js"></script>
+    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">
+      Entrar
+    </button>
+
+    <p id="error-message" class="text-red-600 text-sm text-center mt-2 hidden"></p>
+  </form>
+</div>
+
+<script type="module" src="auth.js"></script>
 </body>
 </html>

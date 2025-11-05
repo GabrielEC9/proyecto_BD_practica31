@@ -66,53 +66,68 @@ function mostrarSeccion(seccion) {
 }
 
 async function cargarClientes() {
-  const res = await fetch('/api/clientes');
-  const clientes = await res.json();
-  const contenedor = document.getElementById('clientes-container');
-  contenedor.innerHTML = '';
-  clientes.forEach(c => {
-    const card = document.createElement('div');
-    card.className = 'col-md-4';
-    card.innerHTML = `
-      <div class="card p-3">
-        <h5><i class="fas fa-user"></i> ${c.nombre}</h5>
-        <p><i class="fas fa-phone"></i> ${c.telefono || '-'}</p>
-        <p><i class="fas fa-map-marker-alt"></i> ${c.direccion || '-'}</p>
-        <button class="btn btn-sm btn-outline-primary toggle-veh"><i class="fas fa-car"></i> Ver Vehículos</button>
-        <div class="vehiculos mt-2" style="display:none;">
-          ${c.vehiculo && c.vehiculo.length > 0 ? 
-            c.vehiculo.map(v => `<div><i class="fas fa-car-side"></i> ${v.marca} ${v.modelo} (${v.año}) - Placas: ${v.placas}</div>`).join('') : 
-            '<div class="no-vehiculos">No tiene vehículos</div>'}
-        </div>
-      </div>`;
-    const btn = card.querySelector('.toggle-veh');
-    const vehDiv = card.querySelector('.vehiculos');
-    btn.addEventListener('click', () => {
-      vehDiv.style.display = vehDiv.style.display === 'none' ? 'block' : 'none';
+  try {
+    const res = await fetch('/api/clientes');
+    if (!res.ok) throw new Error('Error al obtener clientes');
+    const clientes = await res.json();
+    const contenedor = document.getElementById('clientes-container');
+    contenedor.innerHTML = '';
+    clientes.forEach(c => {
+      const card = document.createElement('div');
+      card.className = 'col-md-4';
+      card.innerHTML = `
+        <div class="card p-3">
+          <h5><i class="fas fa-user"></i> ${c.nombre} ${c.apellido || ''}</h5>
+          <p><i class="fas fa-phone"></i> ${c.telefono || '-'}</p>
+          <p><i class="fas fa-map-marker-alt"></i> ${c.direccion || '-'}</p>
+          <button class="btn btn-sm btn-outline-primary toggle-veh"><i class="fas fa-car"></i> Ver Vehículos</button>
+          <div class="vehiculos mt-2" style="display:none;">
+            ${c.vehiculo && c.vehiculo.length > 0 ? 
+              c.vehiculo.map(v => `<div><i class="fas fa-car-side"></i> ${v.marca} ${v.modelo} (${v.anio || v.año || ''}) - Matricula: ${v.matricula || ''}</div>`).join('') : 
+              '<div class="no-vehiculos">No tiene vehículos</div>'}
+          </div>
+        </div>`;
+      const btn = card.querySelector('.toggle-veh');
+      const vehDiv = card.querySelector('.vehiculos');
+      btn.addEventListener('click', () => {
+        vehDiv.style.display = vehDiv.style.display === 'none' ? 'block' : 'none';
+      });
+      contenedor.appendChild(card);
     });
-    contenedor.appendChild(card);
-  });
+  } catch (err) {
+    console.error(err);
+    document.getElementById('clientes-container').innerHTML = '<p class="text-danger">No se pudieron cargar los clientes.</p>';
+  }
 }
 
 async function cargarOrdenes() {
-  const res = await fetch('/api/ordenes');
-  const ordenes = await res.json();
-  document.getElementById('pendientes').innerHTML = '';
-  document.getElementById('en-progreso').innerHTML = '';
-  document.getElementById('completadas').innerHTML = '';
-  ordenes.forEach(o => {
-    const div = document.createElement('div');
-    div.className = `orden ${o.orden_prioritaria ? 'prioritaria' : 'no-prioritaria'}`;
-    div.innerHTML = `
-      <strong>ID: ${o.id_orden}</strong> <br>
-      <i class="fas fa-car-side"></i> Vehículo: ${o.vehiculo?.marca || '-'} ${o.vehiculo?.modelo || '-'} <br>
-      <i class="fas fa-user"></i> Cliente: ${o.vehiculo?.cliente?.nombre || '-'} <br>
-      <i class="fas fa-wrench"></i> Servicio: ${o.servicio?.descripcion || '-'} ($${o.servicio?.costo || '-'}) <br>
-      <i class="fas fa-dollar-sign"></i> Estado: ${o.estado_pago || '-'}`;
-    if(o.estado_pago === 'Pendiente') document.getElementById('pendientes').appendChild(div)
-    else if(o.estado_pago === 'En progreso') document.getElementById('en-progreso').appendChild(div)
-    else document.getElementById('completadas').appendChild(div)
-  });
+  try {
+    const res = await fetch('/api/ordenes');
+    if (!res.ok) throw new Error('Error al obtener órdenes');
+    const ordenes = await res.json();
+    document.getElementById('pendientes').innerHTML = '';
+    document.getElementById('en-progreso').innerHTML = '';
+    document.getElementById('completadas').innerHTML = '';
+    ordenes.forEach(o => {
+      const div = document.createElement('div');
+      const prioridad = (o.fecha_limite && new Date(o.fecha_limite) < new Date()) ? 'prioritaria' : (o.recargo ? 'prioritaria' : 'no-prioritaria');
+      div.className = `orden ${prioridad}`;
+      div.innerHTML = `
+        <strong>ID: ${o.id_orden}</strong> <br>
+        <i class="fas fa-car-side"></i> Vehículo: ${o.vehiculo?.marca || '-'} ${o.vehiculo?.modelo || '-'} <br>
+        <i class="fas fa-user"></i> Cliente: ${o.vehiculo?.cliente?.nombre || '-'} ${o.vehiculo?.cliente?.apellido || ''} <br>
+        <i class="fas fa-wrench"></i> Servicio: ${o.servicio?.nombre_servicio || o.servicio?.descripcion || '-'} ($${o.servicio?.costo || '-'}) <br>
+        <i class="fas fa-dollar-sign"></i> Estado: ${o.estado || o.estado_pago || '-'} <br>
+        ${o.fecha_limite ? `<small>Fecha límite: ${o.fecha_limite}</small>` : ''}
+      `;
+      if((o.estado || '').toUpperCase() === 'PENDIENTE' || (o.estado_pago || '').toLowerCase() === 'pendiente') document.getElementById('pendientes').appendChild(div)
+      else if((o.estado || '').toUpperCase() === 'EN PROCESO' || (o.estado_pago || '').toLowerCase() === 'en progreso') document.getElementById('en-progreso').appendChild(div)
+      else document.getElementById('completadas').appendChild(div)
+    });
+  } catch (err) {
+    console.error(err);
+    document.getElementById('pendientes').innerHTML = '<p class="text-danger">No se pudieron cargar las órdenes.</p>';
+  }
 }
 
 cargarClientes();
@@ -121,3 +136,4 @@ cargarOrdenes();
 
 </body>
 </html>
+

@@ -11,7 +11,7 @@
 
   // 🔹 Inicializar Supabase
   const SUPABASE_URL = "https://lvuqrksujmgwgvebokgw.supabase.co";
-  const SUPABASE_KEY = "TU_SUPABASE_KEY";
+  const SUPABASE_KEY = "TU_SUPABASE_KEY"; // Cambia esto por tu KEY real
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
   // 🔐 Verificar sesión
@@ -42,7 +42,14 @@
   async function cargarClientes() {
     const { data, error } = await supabase
       .from("cliente")
-      .select("id_cliente, nombre, apellido, telefono, direccion, vehiculo(id_vehiculo, marca, modelo, matricula)");
+      .select(`
+        id_cliente, 
+        nombre, 
+        apellido, 
+        telefono, 
+        direccion, 
+        vehiculos:vehiculo(id_vehiculo, marca, modelo, matricula)
+      `);
 
     if (error) return console.error(error);
     clientesGlobal = data;
@@ -61,7 +68,7 @@
             <p><i class="fas fa-map-marker-alt"></i> ${c.direccion}</p>
             <button class="btn btn-sm btn-outline-primary toggle-veh"><i class="fas fa-car"></i> Ver Vehículos</button>
             <div class="vehiculos mt-2" style="display:none;">
-              ${c.vehiculo?.length ? c.vehiculo.map(v=>`<div><i class="fas fa-car-side"></i> ${v.marca} ${v.modelo} (${v.matricula})</div>`).join("") : "<div class='no-vehiculos'>No tiene vehículos</div>"}
+              ${c.vehiculos?.length ? c.vehiculos.map(v=>`<div><i class="fas fa-car-side"></i> ${v.marca} ${v.modelo} (${v.matricula})</div>`).join("") : "<div class='no-vehiculos'>No tiene vehículos</div>"}
             </div>
           </div>
         </div>`;
@@ -98,8 +105,8 @@
         fecha_ingreso,
         fecha_salida,
         estado_pago,
-        vehiculo(id_vehiculo, marca, modelo, matricula, cliente(id_cliente, nombre, apellido)),
-        servicio(id_servicio, descripcion, costo)
+        vehiculo:vehiculo(id_vehiculo, marca, modelo, matricula, cliente:id_cliente_cliente(nombre, apellido)),
+        servicio:id_servicio_servicio(descripcion, costo)
       `);
     if (error) return console.error(error);
 
@@ -114,7 +121,7 @@
       div.className = "orden shadow-sm p-3 rounded mb-3";
       div.innerHTML = `
         <strong>ID: ${o.id_orden}</strong><br>
-        <i class="fas fa-car"></i> ${o.vehiculo?.marca} ${o.vehiculo?.modelo} (${o.vehiculo?.matricula})<br>
+        <i class="fas fa-car"></i> ${o.vehiculo?.marca || "-"} ${o.vehiculo?.modelo || "-"} (${o.vehiculo?.matricula || "-"})<br>
         <i class="fas fa-user"></i> ${o.vehiculo?.cliente?.nombre || "-"} ${o.vehiculo?.cliente?.apellido || ""}<br>
         <i class="fas fa-wrench"></i> ${o.servicio?.descripcion || "-"} ($${o.servicio?.costo || 0})<br>
         <i class="fas fa-clock"></i> Estado: ${o.estado_pago || "-"}
@@ -131,7 +138,7 @@
     const cliente = clientesGlobal.find(c=>c.id_cliente===clienteId);
     const vehSel = document.getElementById("vehiculo-select");
     vehSel.innerHTML = "<option value=''>-- Seleccione Vehículo --</option>";
-    if(cliente?.vehiculo) cliente.vehiculo.forEach(v=>vehSel.innerHTML += `<option value="${v.id_vehiculo}">${v.marca} ${v.modelo} (${v.matricula})</option>`);
+    if(cliente?.vehiculos) cliente.vehiculos.forEach(v=>vehSel.innerHTML += `<option value="${v.id_vehiculo}">${v.marca} ${v.modelo} (${v.matricula})</option>`);
   });
 
   // 💲 Mostrar costo al seleccionar servicio

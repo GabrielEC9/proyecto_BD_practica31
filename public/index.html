@@ -6,6 +6,7 @@
 <title>Taller Automotriz Interactivo</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   body { background: #f4f6f9; font-family: 'Segoe UI', sans-serif; padding: 20px; }
   h1 { text-align: center; margin-bottom: 30px; color: #222; font-weight: bold; }
@@ -21,15 +22,20 @@
   .columna { flex: 1; min-width: 280px; }
   .accordion-button { cursor: pointer; }
   .no-vehiculos { font-style: italic; color: #777; }
+  .logout-btn { position: absolute; top: 20px; right: 20px; }
 </style>
 </head>
 <body>
+
+<!-- 🔐 Botón de cerrar sesión -->
+<button class="btn btn-danger logout-btn" onclick="cerrarSesion()"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
 
 <h1><i class="fas fa-tools"></i> Taller Automotriz Interactivo</h1>
 
 <div class="menu">
   <button class="btn btn-primary" onclick="mostrarSeccion('clientes')"><i class="fas fa-users"></i> Clientes</button>
   <button class="btn btn-secondary" onclick="mostrarSeccion('ordenes')"><i class="fas fa-clipboard-list"></i> Órdenes de Trabajo</button>
+  <button class="btn btn-success" onclick="mostrarSeccion('nueva-orden')"><i class="fas fa-plus-circle"></i> Nueva Orden</button>
 </div>
 
 <div class="container">
@@ -57,83 +63,147 @@
     </div>
   </div>
 
+  <!-- 🧾 Formulario Nueva Orden -->
+  <div id="nueva-orden-section" style="display:none;">
+    <h2>Registrar Nueva Orden de Trabajo</h2>
+    <form id="form-orden" class="p-3 bg-white shadow rounded">
+      <div class="mb-3">
+        <label class="form-label">Vehículo (ID)</label>
+        <input type="number" class="form-control" id="id_vehiculo" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Servicio (ID)</label>
+        <input type="number" class="form-control" id="id_servicio" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Fecha de ingreso</label>
+        <input type="date" class="form-control" id="fecha_ingreso" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Fecha de salida</label>
+        <input type="date" class="form-control" id="fecha_salida" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Estado del pago</label>
+        <select class="form-select" id="estado_pago" required>
+          <option value="Pendiente">Pendiente</option>
+          <option value="En progreso">En progreso</option>
+          <option value="Completada">Completada</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-success w-100"><i class="fas fa-save"></i> Guardar Orden</button>
+    </form>
+    <div id="mensaje-orden" class="mt-3"></div>
+  </div>
+
 </div>
 
 <script>
-function mostrarSeccion(seccion) {
-  document.getElementById('clientes-section').style.display = seccion === 'clientes' ? 'block' : 'none';
-  document.getElementById('ordenes-section').style.display = seccion === 'ordenes' ? 'block' : 'none';
-}
+  // 🧩 Inicializar Supabase
+  const SUPABASE_URL = "https://TU-PROJECT-URL.supabase.co";
+  const SUPABASE_KEY = "TU-API-KEY";
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-async function cargarClientes() {
-  try {
-    const res = await fetch('/api/clientes');
-    if (!res.ok) throw new Error('Error al obtener clientes');
-    const clientes = await res.json();
-    const contenedor = document.getElementById('clientes-container');
-    contenedor.innerHTML = '';
-    clientes.forEach(c => {
-      const card = document.createElement('div');
-      card.className = 'col-md-4';
+  // 🔐 Verificar sesión
+  async function verificarSesion() {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
+      window.location.href = "login.html";
+    }
+  }
+
+  verificarSesion();
+
+  async function cerrarSesion() {
+    await supabase.auth.signOut();
+    window.location.href = "login.html";
+  }
+
+  function mostrarSeccion(seccion) {
+    document.getElementById('clientes-section').style.display = seccion === 'clientes' ? 'block' : 'none';
+    document.getElementById('ordenes-section').style.display = seccion === 'ordenes' ? 'block' : 'none';
+    document.getElementById('nueva-orden-section').style.display = seccion === 'nueva-orden' ? 'block' : 'none';
+  }
+
+  async function cargarClientes() {
+    const { data, error } = await supabase.from("cliente").select("id_cliente, nombre, apellido, telefono, direccion, vehiculo (marca, modelo, anio, matricula)");
+    if (error) return console.error(error);
+    const contenedor = document.getElementById("clientes-container");
+    contenedor.innerHTML = "";
+    data.forEach(c => {
+      const card = document.createElement("div");
+      card.className = "col-md-4";
       card.innerHTML = `
         <div class="card p-3">
-          <h5><i class="fas fa-user"></i> ${c.nombre} ${c.apellido || ''}</h5>
-          <p><i class="fas fa-phone"></i> ${c.telefono || '-'}</p>
-          <p><i class="fas fa-map-marker-alt"></i> ${c.direccion || '-'}</p>
+          <h5><i class="fas fa-user"></i> ${c.nombre} ${c.apellido || ""}</h5>
+          <p><i class="fas fa-phone"></i> ${c.telefono}</p>
+          <p><i class="fas fa-map-marker-alt"></i> ${c.direccion}</p>
           <button class="btn btn-sm btn-outline-primary toggle-veh"><i class="fas fa-car"></i> Ver Vehículos</button>
           <div class="vehiculos mt-2" style="display:none;">
-            ${c.vehiculo && c.vehiculo.length > 0 ? 
-              c.vehiculo.map(v => `<div><i class="fas fa-car-side"></i> ${v.marca} ${v.modelo} (${v.anio || v.año || ''}) - Matricula: ${v.matricula || ''}</div>`).join('') : 
-              '<div class="no-vehiculos">No tiene vehículos</div>'}
+            ${c.vehiculo?.length
+              ? c.vehiculo.map(v => `<div><i class="fas fa-car-side"></i> ${v.marca} ${v.modelo} (${v.anio}) - ${v.matricula}</div>`).join("")
+              : "<div class='no-vehiculos'>No tiene vehículos</div>"}
           </div>
         </div>`;
-      const btn = card.querySelector('.toggle-veh');
-      const vehDiv = card.querySelector('.vehiculos');
-      btn.addEventListener('click', () => {
-        vehDiv.style.display = vehDiv.style.display === 'none' ? 'block' : 'none';
+      const btn = card.querySelector(".toggle-veh");
+      const vehDiv = card.querySelector(".vehiculos");
+      btn.addEventListener("click", () => {
+        vehDiv.style.display = vehDiv.style.display === "none" ? "block" : "none";
       });
       contenedor.appendChild(card);
     });
-  } catch (err) {
-    console.error(err);
-    document.getElementById('clientes-container').innerHTML = '<p class="text-danger">No se pudieron cargar los clientes.</p>';
   }
-}
 
-async function cargarOrdenes() {
-  try {
-    const res = await fetch('/api/ordenes');
-    if (!res.ok) throw new Error('Error al obtener órdenes');
-    const ordenes = await res.json();
-    document.getElementById('pendientes').innerHTML = '';
-    document.getElementById('en-progreso').innerHTML = '';
-    document.getElementById('completadas').innerHTML = '';
-    ordenes.forEach(o => {
-      const div = document.createElement('div');
-      const prioridad = (o.fecha_limite && new Date(o.fecha_limite) < new Date()) ? 'prioritaria' : (o.recargo ? 'prioritaria' : 'no-prioritaria');
-      div.className = `orden ${prioridad}`;
+  async function cargarOrdenes() {
+    const { data, error } = await supabase
+      .from("orden_trabajo")
+      .select("id_orden, fecha_ingreso, fecha_salida, estado_pago, vehiculo (marca, modelo, cliente (nombre, apellido)), servicio (descripcion, costo)");
+    if (error) return console.error(error);
+    const pendientes = document.getElementById("pendientes");
+    const enProgreso = document.getElementById("en-progreso");
+    const completadas = document.getElementById("completadas");
+    pendientes.innerHTML = enProgreso.innerHTML = completadas.innerHTML = "";
+    data.forEach(o => {
+      const div = document.createElement("div");
+      div.className = `orden ${o.estado_pago === "Pendiente" ? "prioritaria" : "no-prioritaria"}`;
       div.innerHTML = `
-        <strong>ID: ${o.id_orden}</strong> <br>
-        <i class="fas fa-car-side"></i> Vehículo: ${o.vehiculo?.marca || '-'} ${o.vehiculo?.modelo || '-'} <br>
-        <i class="fas fa-user"></i> Cliente: ${o.vehiculo?.cliente?.nombre || '-'} ${o.vehiculo?.cliente?.apellido || ''} <br>
-        <i class="fas fa-wrench"></i> Servicio: ${o.servicio?.nombre_servicio || o.servicio?.descripcion || '-'} ($${o.servicio?.costo || '-'}) <br>
-        <i class="fas fa-dollar-sign"></i> Estado: ${o.estado || o.estado_pago || '-'} <br>
-        ${o.fecha_limite ? `<small>Fecha límite: ${o.fecha_limite}</small>` : ''}
-      `;
-      if((o.estado || '').toUpperCase() === 'PENDIENTE' || (o.estado_pago || '').toLowerCase() === 'pendiente') document.getElementById('pendientes').appendChild(div)
-      else if((o.estado || '').toUpperCase() === 'EN PROCESO' || (o.estado_pago || '').toLowerCase() === 'en progreso') document.getElementById('en-progreso').appendChild(div)
-      else document.getElementById('completadas').appendChild(div)
+        <strong>ID: ${o.id_orden}</strong><br>
+        <i class="fas fa-car"></i> ${o.vehiculo?.marca} ${o.vehiculo?.modelo}<br>
+        <i class="fas fa-user"></i> ${o.vehiculo?.cliente?.nombre || "-"} ${o.vehiculo?.cliente?.apellido || ""}<br>
+        <i class="fas fa-wrench"></i> ${o.servicio?.descripcion} ($${o.servicio?.costo})<br>
+        <i class="fas fa-clock"></i> Estado: ${o.estado_pago}`;
+      if (o.estado_pago === "Pendiente") pendientes.appendChild(div);
+      else if (o.estado_pago === "En progreso") enProgreso.appendChild(div);
+      else completadas.appendChild(div);
     });
-  } catch (err) {
-    console.error(err);
-    document.getElementById('pendientes').innerHTML = '<p class="text-danger">No se pudieron cargar las órdenes.</p>';
   }
-}
 
-cargarClientes();
-cargarOrdenes();
+  // 🧾 Guardar nueva orden
+  document.getElementById("form-orden").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const orden = {
+      id_vehiculo: +document.getElementById("id_vehiculo").value,
+      id_servicio: +document.getElementById("id_servicio").value,
+      fecha_ingreso: document.getElementById("fecha_ingreso").value,
+      fecha_salida: document.getElementById("fecha_salida").value,
+      estado_pago: document.getElementById("estado_pago").value
+    };
+    const { error } = await supabase.from("orden_trabajo").insert([orden]);
+    const msg = document.getElementById("mensaje-orden");
+    if (error) msg.innerHTML = `<p class="text-danger">Error: ${error.message}</p>`;
+    else {
+      msg.innerHTML = `<p class="text-success">Orden agregada exitosamente.</p>`;
+      document.getElementById("form-orden").reset();
+      cargarOrdenes();
+    }
+  });
+
+  cargarClientes();
+  cargarOrdenes();
 </script>
 
 </body>
 </html>
+
+
 

@@ -40,11 +40,13 @@
 
 <div class="container">
 
+  <!-- Clientes -->
   <div id="clientes-section">
     <h2>Clientes y Vehículos</h2>
     <div id="clientes-container" class="row"></div>
   </div>
 
+  <!-- Órdenes -->
   <div id="ordenes-section" style="display:none;">
     <h2>Órdenes de Trabajo</h2>
     <div class="tablero">
@@ -63,7 +65,7 @@
     </div>
   </div>
 
-  <!-- 🧾 Formulario Nueva Orden -->
+  <!-- Nueva Orden -->
   <div id="nueva-orden-section" style="display:none;">
     <h2>Registrar Nueva Orden de Trabajo</h2>
     <form id="form-orden" class="p-3 bg-white shadow rounded">
@@ -106,67 +108,158 @@
 </div>
 
 <script>
-  // 🧩 Inicializar Supabase
-  const SUPABASE_URL = "https://lvuqrksujmgwgvebokgw.supabase.co";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2dXFya3N1am1nd2d2ZWJva2d3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxNzA0NzIsImV4cCI6MjA3NTc0NjQ3Mn0.-r4fp5yQi1pH2qHmbEbhm-6Q_4WgXc_yrr3JQZpGJV4";
-  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_URL = "https://lvuqrksujmgwgvebokgw.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2dXFya3N1am1nd2d2ZWJva2d3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxNzA0NzIsImV4cCI6MjA3NTc0NjQ3Mn0.-r4fp5yQi1pH2qHmbEbhm-6Q_4WgXc_yrr3JQZpGJV4";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // 🔐 Verificar sesión
-  async function verificarSesion() {
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) window.location.href = "login.html";
-  }
-  verificarSesion();
+// 🔐 Verificar sesión
+async function verificarSesion() {
+  const { data } = await supabase.auth.getSession();
+  if (!data.session) window.location.href = "login.html";
+}
+verificarSesion();
 
-  // 🔒 Cerrar sesión
-  async function cerrarSesion() {
-    const { error } = await supabase.auth.signOut();
-    if (!error) window.location.href = "login.html";
-  }
+// 🔒 Cerrar sesión
+async function cerrarSesion() {
+  await supabase.auth.signOut();
+  window.location.href = "login.html";
+}
 
-  // 🖥️ Navegación de secciones
-  function mostrarSeccion(seccion) {
-    const secciones = ['clientes', 'ordenes', 'nueva-orden'];
-    secciones.forEach(s => {
-      const el = document.getElementById(`${s}-section`);
-      el.style.display = s === seccion ? 'block' : 'none';
+// 🖥️ Navegación de secciones
+function mostrarSeccion(seccion) {
+  ['clientes','ordenes','nueva-orden'].forEach(s => {
+    document.getElementById(`${s}-section`).style.display = s===seccion ? 'block':'none';
+  });
+}
+
+// 🧾 Cargar clientes en sección y en formulario
+async function cargarClientes() {
+  const { data, error } = await supabase.from("cliente").select("id_cliente, nombre, apellido, telefono, direccion, vehiculo(id_vehiculo, marca, modelo, matricula)");
+  if (error) return console.error(error);
+
+  // Clientes sección
+  const contenedor = document.getElementById("clientes-container");
+  contenedor.innerHTML = "";
+  data.forEach(c => {
+    const card = document.createElement("div");
+    card.className = "col-md-4";
+    card.innerHTML = `
+      <div class="card p-3">
+        <h5><i class="fas fa-user"></i> ${c.nombre} ${c.apellido || ""}</h5>
+        <p><i class="fas fa-phone"></i> ${c.telefono}</p>
+        <p><i class="fas fa-map-marker-alt"></i> ${c.direccion}</p>
+        <button class="btn btn-sm btn-outline-primary toggle-veh"><i class="fas fa-car"></i> Ver Vehículos</button>
+        <div class="vehiculos mt-2" style="display:none;">
+          ${c.vehiculo?.length
+            ? c.vehiculo.map(v => `<div><i class="fas fa-car-side"></i> ${v.marca} ${v.modelo} (${v.matricula})</div>`).join("")
+            : "<div class='no-vehiculos'>No tiene vehículos</div>"}
+        </div>
+      </div>`;
+    const btn = card.querySelector(".toggle-veh");
+    const vehDiv = card.querySelector(".vehiculos");
+    btn.addEventListener("click", ()=>{ vehDiv.style.display = vehDiv.style.display==="none"?"block":"none"; });
+    contenedor.appendChild(card);
+  });
+
+  // Clientes en formulario
+  const clienteSelect = document.getElementById("cliente-select");
+  clienteSelect.innerHTML = `<option value="">Seleccione un cliente</option>`;
+  data.forEach(c => {
+    clienteSelect.innerHTML += `<option value="${c.id_cliente}">${c.nombre} ${c.apellido}</option>`;
+  });
+}
+
+// 🚗 Cargar vehículos de un cliente en formulario
+async function cargarVehiculosPorCliente(id_cliente) {
+  const { data, error } = await supabase.from("vehiculo").select("*").eq("id_cliente", id_cliente);
+  const vehiculoSelect = document.getElementById("vehiculo-select");
+  vehiculoSelect.innerHTML = `<option value="">Seleccione un vehículo</option>`;
+  if (!error && data) {
+    data.forEach(v => {
+      vehiculoSelect.innerHTML += `<option value="${v.id_vehiculo}">${v.marca} ${v.modelo} (${v.matricula})</option>`;
     });
   }
+}
 
-  // 🧾 Cargar clientes
-  async function cargarClientes() {
-    const { data, error } = await supabase.from("cliente").select("id_cliente, nombre, apellido, telefono, direccion, vehiculo(id_vehiculo, marca, modelo, matricula)");
-    if (error) return console.error(error);
-    const contenedor = document.getElementById("clientes-container");
-    contenedor.innerHTML = "";
-    data.forEach(c => {
-      const card = document.createElement("div");
-      card.className = "col-md-4";
-      card.innerHTML = `
-        <div class="card p-3">
-          <h5><i class="fas fa-user"></i> ${c.nombre} ${c.apellido || ""}</h5>
-          <p><i class="fas fa-phone"></i> ${c.telefono}</p>
-          <p><i class="fas fa-map-marker-alt"></i> ${c.direccion}</p>
-          <button class="btn btn-sm btn-outline-primary toggle-veh"><i class="fas fa-car"></i> Ver Vehículos</button>
-          <div class="vehiculos mt-2" style="display:none;">
-            ${c.vehiculo?.length
-              ? c.vehiculo.map(v => `<div><i class="fas fa-car-side"></i> ${v.marca} ${v.modelo} (${v.matricula})</div>`).join("")
-              : "<div class='no-vehiculos'>No tiene vehículos</div>"}
-          </div>
-        </div>`;
-      const btn = card.querySelector(".toggle-veh");
-      const vehDiv = card.querySelector(".vehiculos");
-      btn.addEventListener("click", () => {
-        vehDiv.style.display = vehDiv.style.display === "none" ? "block" : "none";
-      });
-      contenedor.appendChild(card);
-    });
+// 🛠️ Cargar servicios en formulario
+async function cargarServicios() {
+  const { data } = await supabase.from("servicio").select("*");
+  const servicioSelect = document.getElementById("servicio-select");
+  servicioSelect.innerHTML = `<option value="">Seleccione un servicio</option>`;
+  data.forEach(s => {
+    servicioSelect.innerHTML += `<option value="${s.id_servicio}" data-costo="${s.costo}">${s.descripcion} ($${s.costo})</option>`;
+  });
+}
+
+// 💰 Actualizar costo al cambiar servicio
+document.getElementById("servicio-select").addEventListener("change", e=>{
+  const selected = e.target.selectedOptions[0];
+  const costo = selected ? selected.dataset.costo : 0;
+  document.getElementById("costo").value = costo;
+});
+
+// 📝 Guardar nueva orden
+document.getElementById("form-orden").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const orden = {
+    id_cliente: +document.getElementById("cliente-select").value,
+    id_vehiculo: +document.getElementById("vehiculo-select").value,
+    id_servicio: +document.getElementById("servicio-select").value,
+    prioridad: document.getElementById("prioridad").value,
+    fecha_ingreso: document.getElementById("fecha_ingreso").value,
+    fecha_salida: document.getElementById("fecha_salida").value,
+    costo: +document.getElementById("costo").value
+  };
+  const { error } = await supabase.from("orden_trabajo").insert([orden]);
+  const msg = document.getElementById("mensaje-orden");
+  if(error) msg.innerHTML = `<p class="text-danger">Error: ${error.message}</p>`;
+  else {
+    msg.innerHTML = `<p class="text-success">Orden agregada exitosamente.</p>`;
+    e.target.reset();
+    document.getElementById("vehiculo-select").innerHTML = "";
+    document.getElementById("costo").value = "";
+    cargarOrdenes();
   }
+});
 
-  // 📝 Cargar órdenes
-  async function cargarOrdenes() {
-    const { data, error } = await supabase
-      .from("orden_trabajo")
-      .select("id_orden, fecha_ingreso, fecha_salida, prioridad, costo, vehiculo(id_vehiculo, marca, modelo, cliente(id_cliente, nombre, apellido)), servicio(id_servicio, descripcion, costo)");
-    if (error) return console.error(error);
-    const pendientes = document.getElementById
+// 📝 Cargar órdenes existentes
+async function cargarOrdenes() {
+  const { data } = await supabase.from("orden_trabajo")
+    .select("id_orden, fecha_ingreso, fecha_salida, prioridad, costo, vehiculo(id_vehiculo, marca, modelo), cliente(id_cliente, nombre, apellido), servicio(descripcion, costo), estado_pago");
+  
+  const pendientes = document.getElementById("pendientes");
+  const enProgreso = document.getElementById("en-progreso");
+  const completadas = document.getElementById("completadas");
+  pendientes.innerHTML = enProgreso.innerHTML = completadas.innerHTML = "";
+
+  data.forEach(o=>{
+    const div = document.createElement("div");
+    div.className = `orden ${o.prioridad==="Alta"?"prioritaria":"no-prioritaria"}`;
+    div.innerHTML = `
+      <strong>ID: ${o.id_orden}</strong><br>
+      <i class="fas fa-user"></i> ${o.cliente?.nombre || "-"} ${o.cliente?.apellido || ""}<br>
+      <i class="fas fa-car"></i> ${o.vehiculo?.marca} ${o.vehiculo?.modelo}<br>
+      <i class="fas fa-wrench"></i> ${o.servicio?.descripcion} ($${o.costo})<br>
+      <i class="fas fa-clock"></i> ${o.fecha_ingreso} → ${o.fecha_salida}<br>
+      <i class="fas fa-money-bill"></i> $${o.costo}<br>
+      Prioridad: ${o.prioridad}`;
+    
+    if(o.estado_pago==="Pendiente") pendientes.appendChild(div);
+    else if(o.estado_pago==="En progreso") enProgreso.appendChild(div);
+    else completadas.appendChild(div);
+  });
+}
+
+// 🔄 Eventos dependientes
+document.getElementById("cliente-select").addEventListener("change", e=>{
+  cargarVehiculosPorCliente(+e.target.value);
+});
+
+// 🔄 Inicializar página
+cargarClientes();
+cargarServicios();
+cargarOrdenes();
+
+</script>
+</body>
+</html>

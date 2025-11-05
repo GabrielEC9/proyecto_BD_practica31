@@ -6,12 +6,13 @@
 <title>Taller Automotriz Interactivo</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+
 <script type="module">
   import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
   // 🔹 Inicializar Supabase
   const SUPABASE_URL = "https://lvuqrksujmgwgvebokgw.supabase.co";
-  const SUPABASE_KEY = "TU_SUPABASE_KEY"; // Cambia esto por tu KEY real
+  const SUPABASE_KEY = "TU_SUPABASE_KEY";
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
   // 🔐 Verificar sesión
@@ -42,14 +43,7 @@
   async function cargarClientes() {
     const { data, error } = await supabase
       .from("cliente")
-      .select(`
-        id_cliente, 
-        nombre, 
-        apellido, 
-        telefono, 
-        direccion, 
-        vehiculos:vehiculo(id_vehiculo, marca, modelo, matricula)
-      `);
+      .select("id_cliente, nombre, apellido, telefono, direccion, vehiculo(id_vehiculo, marca, modelo, matricula)");
 
     if (error) return console.error(error);
     clientesGlobal = data;
@@ -68,7 +62,7 @@
             <p><i class="fas fa-map-marker-alt"></i> ${c.direccion}</p>
             <button class="btn btn-sm btn-outline-primary toggle-veh"><i class="fas fa-car"></i> Ver Vehículos</button>
             <div class="vehiculos mt-2" style="display:none;">
-              ${c.vehiculos?.length ? c.vehiculos.map(v=>`<div><i class="fas fa-car-side"></i> ${v.marca} ${v.modelo} (${v.matricula})</div>`).join("") : "<div class='no-vehiculos'>No tiene vehículos</div>"}
+              ${c.vehiculo?.length ? c.vehiculo.map(v=>`<div><i class="fas fa-car-side"></i> ${v.marca} ${v.modelo} (${v.matricula})</div>`).join("") : "<div class='no-vehiculos'>No tiene vehículos</div>"}
             </div>
           </div>
         </div>`;
@@ -105,8 +99,8 @@
         fecha_ingreso,
         fecha_salida,
         estado_pago,
-        vehiculo:vehiculo(id_vehiculo, marca, modelo, matricula, cliente:id_cliente_cliente(nombre, apellido)),
-        servicio:id_servicio_servicio(descripcion, costo)
+        vehiculo(id_vehiculo, marca, modelo, matricula, cliente(id_cliente, nombre, apellido)),
+        servicio(id_servicio, descripcion, costo)
       `);
     if (error) return console.error(error);
 
@@ -121,7 +115,7 @@
       div.className = "orden shadow-sm p-3 rounded mb-3";
       div.innerHTML = `
         <strong>ID: ${o.id_orden}</strong><br>
-        <i class="fas fa-car"></i> ${o.vehiculo?.marca || "-"} ${o.vehiculo?.modelo || "-"} (${o.vehiculo?.matricula || "-"})<br>
+        <i class="fas fa-car"></i> ${o.vehiculo?.marca} ${o.vehiculo?.modelo} (${o.vehiculo?.matricula})<br>
         <i class="fas fa-user"></i> ${o.vehiculo?.cliente?.nombre || "-"} ${o.vehiculo?.cliente?.apellido || ""}<br>
         <i class="fas fa-wrench"></i> ${o.servicio?.descripcion || "-"} ($${o.servicio?.costo || 0})<br>
         <i class="fas fa-clock"></i> Estado: ${o.estado_pago || "-"}
@@ -138,7 +132,7 @@
     const cliente = clientesGlobal.find(c=>c.id_cliente===clienteId);
     const vehSel = document.getElementById("vehiculo-select");
     vehSel.innerHTML = "<option value=''>-- Seleccione Vehículo --</option>";
-    if(cliente?.vehiculos) cliente.vehiculos.forEach(v=>vehSel.innerHTML += `<option value="${v.id_vehiculo}">${v.marca} ${v.modelo} (${v.matricula})</option>`);
+    if(cliente?.vehiculo) cliente.vehiculo.forEach(v=>vehSel.innerHTML += `<option value="${v.id_vehiculo}">${v.marca} ${v.modelo} (${v.matricula})</option>`);
   });
 
   // 💲 Mostrar costo al seleccionar servicio
@@ -177,68 +171,20 @@
 </script>
 
 <style>
-  body {
-    background: #f0f2f5;
-    font-family: 'Segoe UI', sans-serif;
-    padding-top: 80px;
-  }
-
-  .logout-btn {
-    position: fixed;
-    top: 15px;
-    right: 20px;
-    z-index: 1000;
-  }
-
-  h1 {
-    text-align: center;
-    margin-bottom: 30px;
-    font-weight: bold;
-    color: #343a40;
-  }
-
-  .menu {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-bottom: 25px;
-  }
-
-  .card {
-    margin-bottom: 20px;
-    border-radius: 10px;
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
-
+  body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; padding-top: 80px; }
+  .logout-btn { position: fixed; top: 15px; right: 20px; z-index: 1000; }
+  h1 { text-align: center; margin-bottom: 30px; font-weight: bold; color: #343a40; }
+  .menu { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; }
+  .card { margin-bottom: 20px; border-radius: 10px; transition: transform 0.2s, box-shadow 0.2s; }
   .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
-
   .card-header { font-weight: bold; font-size: 1.1rem; }
-
   .vehiculos { padding-left: 10px; margin-top: 10px; }
-
-  .tablero {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-  }
-
+  .tablero { display: flex; gap: 20px; flex-wrap: wrap; }
   .columna { flex: 1; min-width: 280px; }
-
   .orden { background-color: #fff; border-radius: 10px; transition: transform 0.2s; }
-
   .orden:hover { transform: scale(1.02); }
-
-  #form-orden {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  }
-
-  button:hover, select:hover, input:hover {
-    transition: 0.2s;
-    transform: scale(1.02);
-  }
+  #form-orden { background-color: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+  button:hover, select:hover, input:hover { transition: 0.2s; transform: scale(1.02); }
 </style>
 
 <body>

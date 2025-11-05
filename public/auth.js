@@ -1,34 +1,35 @@
-
 import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = 'https://lvuqrksujmgwgvebokgw.supabase.co'
 const supabaseKey = process.env.SUPABASE_KEY
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 
-document.getElementById('login-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('login-form')
+  const errorMsg = document.getElementById('error-message')
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-  if (error) {
-    alert('Error: ' + error.message);
-  } else {
-
-    window.location.href = 'index.html';
-  }
-});
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const email = document.getElementById('email').value
+    const password = document.getElementById('password').value
 
 
-async function protegerPagina() {
-  const { data } = await supabase.auth.getSession();
-  if (!data.session) {
+    errorMsg.textContent = ''
+    errorMsg.classList.add('hidden')
 
-    window.location.href = 'login.html';
-  }
-}
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
 
-if (window.location.pathname.endsWith('index.html')) {
-  protegerPagina();
-}
+    if (error) {
+      console.error('Supabase error:', error)
+      errorMsg.textContent = 'Correo o contraseña incorrectos.'
+      errorMsg.classList.remove('hidden')
+    } else {
+      console.log('Inicio de sesión correcto:', data)
+
+      window.location.href = 'index.html'
+    }
+  })
+})

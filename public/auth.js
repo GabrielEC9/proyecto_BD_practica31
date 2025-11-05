@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = 'https://lvuqrksujmgwgvebokgw.supabase.co'
-const supabaseKey = process.env.SUPABASE_KEY
+const SUPABASE_KEY = 'SUPABASE_CLIENT_API_KEY'
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 
@@ -33,3 +33,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   })
 })
+

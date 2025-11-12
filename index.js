@@ -7,7 +7,6 @@ const port = process.env.PORT || 3000
 app.use(express.static('public'))
 app.use(express.json())
 
-// Endpoint para obtener clientes con sus vehículos
 app.get('/api/clientes', async (req, res) => {
   const { data, error } = await supabase
     .from('cliente')
@@ -16,7 +15,6 @@ app.get('/api/clientes', async (req, res) => {
   res.json(data)
 })
 
-// Endpoint para obtener órdenes con servicios y vehículos
 app.get('/api/ordenes', async (req, res) => {
   const { data, error } = await supabase
     .from('orden_trabajo')

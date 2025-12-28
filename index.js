@@ -1,8 +1,9 @@
 import 'dotenv/config'
 import express from 'express'
+import { supabase } from './supabaseClient.js'
 import prisma from './prismaClient.js'
 import bcrypt from 'bcrypt'
-import cors from 'cors'
+
 
 const app = express()
 const port = process.env.PORT || 3000
@@ -16,9 +17,6 @@ import express from 'express'
 import prisma from './prismaClient.js'
 import bcrypt from 'bcrypt'
 import cors from 'cors'
-
-const app = express()
-const port = process.env.PORT || 3000
 
 app.use(cors())
 app.use(express.static('public'))

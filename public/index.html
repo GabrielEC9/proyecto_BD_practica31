@@ -15,20 +15,9 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 
-async function verificarSesion() {
-  const { data } = await supabase.auth.getSession();
-  if (!data.session) {
-    window.location.href = "login.html";
-  }
-}
-verificarSesion();
-
-window.cerrarSesion = async () => {
-  await supabase.auth.signOut();
-  localStorage.removeItem("supabaseSession");
-  window.location.href = "login.html";
-};
-
+  import { verificarSesion, cerrarSesion } from './auth.js';
+  verificarSesion(); 
+  window.cerrarSesion = cerrarSesion;
 
 document.getElementById("logout-btn").addEventListener("click", async () => {
   await supabase.auth.signOut();

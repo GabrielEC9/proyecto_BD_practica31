@@ -1,47 +1,26 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('login-form')
-  const errorMsg = document.getElementById('error-message')
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault()
-    const usuario = document.getElementById('email').value
-    const password = document.getElementById('password').value
+const SUPABASE_URL = "https://lvuqrksujmgwgvebokgw.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2dXFya3N1am1nd2d2ZWJva2d3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxNzA0NzIsImV4cCI6MjA3NTc0NjQ3Mn0.-r4fp5yQi1pH2qHmbEbhm-6Q_4WgXc_yrr3JQZpGJV4"
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    errorMsg.textContent = ''
-    errorMsg.classList.add('hidden')
+const loginForm = document.getElementById("login-form");
+const errorMessage = document.getElementById("error-message");
 
-    try {
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuario, password })
-      })
+loginForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
 
-      const data = await res.json()
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-      if (!res.ok) {
-        errorMsg.textContent = data.error || 'Usuario o contraseña incorrectos.'
-        errorMsg.classList.remove('hidden')
-        return
-      }
+  if (error) {
+    errorMessage.textContent = error.message;
+    errorMessage.classList.remove("hidden");
+  } else {
+    errorMessage.classList.add("hidden");
 
-      localStorage.setItem('usuario', data.usuario)
-      window.location.href = 'index.html'
-
-    } catch (err) {
-      console.error(err)
-      errorMsg.textContent = 'Error del servidor. Intenta más tarde.'
-      errorMsg.classList.remove('hidden')
-    }
-  })
-})
-
-window.cerrarSesion = () => {
-  localStorage.removeItem('usuario')
-  window.location.href = 'login.html'
-}
-
-window.verificarSesion = () => {
-  const usuario = localStorage.getItem('usuario')
-  if (!usuario) window.location.href = 'login.html'
-}
+    localStorage.setItem("supabaseSession", JSON.stringify(data.session));
+    window.location.href = "index.html";
+  }
+});

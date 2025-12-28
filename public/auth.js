@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault()
-    const email = document.getElementById('email').value
+    const usuario = document.getElementById('email').value
     const password = document.getElementById('password').value
 
     errorMsg.textContent = ''
@@ -21,9 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch('/api/login-orm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuario: email, password })
+        body: JSON.stringify({ usuario, password })
       })
-
       const data = await res.json()
 
       if (!res.ok) {
@@ -32,13 +31,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return
       }
 
-
       window.location.href = 'index.html'
+
     } catch (err) {
       console.error(err)
-      errorMsg.textContent = 'Ocurrió un error de conexión. Intenta nuevamente.'
+      errorMsg.textContent = 'Error del servidor.'
       errorMsg.classList.remove('hidden')
     }
   })
 })
+
 

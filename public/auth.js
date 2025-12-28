@@ -6,42 +6,43 @@ const supabaseKey = process.env.SUPABASE_KEY
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('login-form')
-  const errorMsg = document.getElementById('error-message')
+  console.log('auth.js cargado');
+
+  const form = document.getElementById('login-form');
+  const errorMsg = document.getElementById('error-message');
 
   form.addEventListener('submit', async (e) => {
-    e.preventDefault() // evita recarga de página
+    e.preventDefault();
 
-    const email = document.getElementById('email').value
-    const password = document.getElementById('password').value
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
 
-    errorMsg.textContent = ''
-    errorMsg.classList.add('hidden')
+    // Limpiar mensaje de error
+    errorMsg.textContent = '';
+    errorMsg.classList.add('hidden');
 
     try {
-      const res = await fetch('/api/login-orm', {
+      const response = await fetch('/api/login-orm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ usuario: email, password })
-      })
+      });
 
-      const data = await res.json()
+      const result = await response.json();
 
-      if (!res.ok) {
-        errorMsg.textContent = data.error || 'Correo o contraseña incorrectos.'
-        errorMsg.classList.remove('hidden')
-        return
+      if (response.ok) {
+        // Login exitoso, redirigir
+        window.location.href = 'index.html';
+      } else {
+        // Mostrar mensaje de error
+        errorMsg.textContent = result.error || 'Correo o contraseña incorrectos.';
+        errorMsg.classList.remove('hidden');
       }
 
-      // Login exitoso
-      console.log('Login correcto:', data)
-      window.location.href = 'index.html'
-
     } catch (err) {
-      console.error(err)
-      errorMsg.textContent = 'Error al conectar con el servidor.'
-      errorMsg.classList.remove('hidden')
+      console.error(err);
+      errorMsg.textContent = 'Ocurrió un error al iniciar sesión.';
+      errorMsg.classList.remove('hidden');
     }
-  })
-})
-
+  });
+});

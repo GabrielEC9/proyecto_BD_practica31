@@ -6,13 +6,13 @@ const supabaseKey = process.env.SUPABASE_KEY
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('auth.js cargado');
   const form = document.getElementById('login-form')
   const errorMsg = document.getElementById('error-message')
 
   form.addEventListener('submit', async (e) => {
-    e.preventDefault()
-    const usuario = document.getElementById('email').value
+    e.preventDefault() // evita recarga de página
+
+    const email = document.getElementById('email').value
     const password = document.getElementById('password').value
 
     errorMsg.textContent = ''
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch('/api/login-orm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuario, password })
+        body: JSON.stringify({ usuario: email, password })
       })
 
       const data = await res.json()
@@ -33,11 +33,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return
       }
 
+      // Login exitoso
+      console.log('Login correcto:', data)
       window.location.href = 'index.html'
 
     } catch (err) {
       console.error(err)
-      errorMsg.textContent = 'Ocurrió un error al iniciar sesión.'
+      errorMsg.textContent = 'Error al conectar con el servidor.'
       errorMsg.classList.remove('hidden')
     }
   })

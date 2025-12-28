@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import bcrypt from 'bcryptjs'
 
 const supabaseUrl = 'https://lvuqrksujmgwgvebokgw.supabase.co'
 const supabaseKey = process.env.SUPABASE_KEY
@@ -16,16 +17,27 @@ document.addEventListener('DOMContentLoaded', () => {
     errorMsg.textContent = ''
     errorMsg.classList.add('hidden')
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase
+      .from('UsuarioORM')
+      .select('*')
+      .eq('usuario', email)
+      .single()
 
-    if (error) {
-      console.error('Supabase error:', error)
+    if (error || !data) {
       errorMsg.textContent = 'Correo o contraseña incorrectos.'
       errorMsg.classList.remove('hidden')
-    } else {
-      console.log('Inicio de sesión correcto:', data)
-      window.location.href = 'index.html'
+      return
     }
+
+    // Comparar contraseña
+    const isValid = await bcrypt.compare(password, data.password)
+    if (!isValid) {
+      errorMsg.textContent = 'Correo o contraseña incorrectos.'
+      errorMsg.classList.remove('hidden')
+      return
+    }
+
+  
+    window.location.href = 'index.html'
   })
 })
-

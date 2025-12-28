@@ -1,16 +1,20 @@
 import 'dotenv/config'
 import express from 'express'
-import { supabase } from './supabaseClient.js'
-import prisma from './prismaClient.js'
-import bcrypt from 'bcrypt'
+import { createClient } from '@supabase/supabase-js'
+import bcrypt from 'bcryptjs'
+import prisma from './prismaClient.js' 
 
 const app = express()
 const port = process.env.PORT || 3000
 
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+)
+
 app.use(express.static('public'))
 app.use(express.json())
 
-// Rutas de ejemplo usando Supabase
 app.get('/api/clientes', async (req, res) => {
   const { data, error } = await supabase
     .from('cliente')
@@ -33,28 +37,29 @@ app.get('/api/ordenes', async (req, res) => {
   res.json(data)
 })
 
-// Login usando ORM (Prisma)
-app.post('/api/login-orm', async (req, res) => {
+app.post('/api/login', async (req, res) => {
   const { usuario, password } = req.body
 
   try {
-    const user = await prisma.usuarioORM.findUnique({
-      where: { usuario }
-    })
+    const { data: user, error } = await supabase
+      .from('UsuarioORM')
+      .select('*')
+      .eq('usuario', usuario)
+      .single()
 
-    if (!user) return res.status(401).json({ error: 'Usuario no encontrado' })
+    if (error || !user) {
+      return res.status(401).json({ error: 'Usuario o contraseña incorrectos' })
+    }
 
-    const isMatch = await bcrypt.compare(password, user.password)
-    if (!isMatch) return res.status(401).json({ error: 'Contraseña incorrecta' })
+    const isValid = await bcrypt.compare(password, user.password)
+    if (!isValid) {
+      return res.status(401).json({ error: 'Usuario o contraseña incorrectos' })
+    }
 
-    res.json({
-      mensaje: 'Login exitoso usando ORM (Prisma)',
-      usuario: user.usuario
-    })
-
-  } catch (error) {
-    console.error(error)
-    res.status(500).json({ error: error.message })
+    res.json({ mensaje: 'Login exitoso', usuario: user.usuario })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Error interno del servidor' })
   }
 })
 

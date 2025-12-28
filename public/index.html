@@ -163,23 +163,14 @@
 
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+import { verificarSesion, cerrarSesion } from './auth.js';
 
 const SUPABASE_URL = "https://lvuqrksujmgwgvebokgw.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2dXFya3N1am1nd2d2ZWJva2d3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxNzA0NzIsImV4cCI6MjA3NTc0NjQ3Mn0.-r4fp5yQi1pH2qHmbEbhm-6Q_4WgXc_yrr3JQZpGJV4"; 
+const SUPABASE_ANON_KEY = "TU_ANON_KEY_AQUI";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-
-  import { verificarSesion, cerrarSesion } from './auth.js';
-  verificarSesion(); 
-  window.cerrarSesion = cerrarSesion;
-
-document.getElementById("logout-btn").addEventListener("click", async () => {
-  await supabase.auth.signOut();
-  localStorage.removeItem("supabaseSession");
-  window.location.href = "login.html";
-});
-
-  window.cerrarSesion = cerrarSesion;
+verificarSesion();
+window.cerrarSesion = cerrarSesion;
 
 window.mostrarSeccion = (seccion) => {
   const secciones = [
@@ -193,185 +184,150 @@ window.mostrarSeccion = (seccion) => {
   secciones.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
-
-    el.style.display = (id === `${seccion}-section`)
-      ? 'block'
-      : 'none';
+    el.style.display = (id === `${seccion}-section`) ? 'block' : 'none';
   });
 };
 
+let clientesGlobal = [];
+let serviciosGlobal = [];
 
-  let clientesGlobal = [];
-  let serviciosGlobal = [];
+async function cargarClientes() {
+  const { data, error } = await supabase
+    .from("cliente")
+    .select(`
+      id_cliente,
+      nombre,
+      apellido,
+      telefono,
+      direccion,
+      correo,
+      vehiculo(id_vehiculo, marca, modelo, matricula, anio)
+    `);
 
-  async function cargarClientes() {
-    const { data, error } = await supabase
-      .from("cliente")
-      .select("id_cliente, nombre, apellido, telefono, direccion, correo, vehiculo(id_vehiculo, marca, modelo, matricula, anio)");
-    if (error) return console.error(error);
-    clientesGlobal = data;
+  if (error) {
+    console.error(error);
+    return;
+  }
 
-    const cont = document.getElementById("clientes-container");
-    cont.innerHTML = "";
+  clientesGlobal = data;
+
+  const cont = document.getElementById("clientes-container");
+  cont.innerHTML = "";
+
+  data.forEach(c => {
+    const card = document.createElement("div");
+    card.className = "col-md-4";
+    card.innerHTML = `
+      <div class="card p-3 shadow-sm mb-3">
+        <h5>${c.nombre} ${c.apellido || ""}</h5>
+        <p>${c.telefono}</p>
+        <p>${c.correo || "-"}</p>
+        <p>${c.direccion}</p>
+        <button class="btn btn-sm btn-outline-primary toggle-veh">Ver Vehículos</button>
+        <div class="vehiculos mt-2" style="display:none;">
+          ${
+            c.vehiculo?.length
+              ? c.vehiculo.map(v => `<div>${v.marca} ${v.modelo} (${v.anio})</div>`).join("")
+              : "<div class='no-vehiculos'>No tiene vehículos</div>"
+          }
+        </div>
+      </div>
+    `;
+
+    card.querySelector(".toggle-veh").addEventListener("click", () => {
+      const veh = card.querySelector(".vehiculos");
+      veh.style.display = veh.style.display === "none" ? "block" : "none";
+    });
+
+    cont.appendChild(card);
+  });
+
+  const selVeh = document.getElementById("vehiculo-cliente-select");
+  if (selVeh) {
+    selVeh.innerHTML = "<option value=''>-- Seleccione Cliente --</option>";
     data.forEach(c => {
-      const card = document.createElement("div");
-      card.className = "col-md-4";
-      card.innerHTML = `
-        <div class="card p-3 shadow-sm mb-3">
-          <h5><i class="fas fa-user"></i> ${c.nombre} ${c.apellido || ""}</h5>
-          <p><i class="fas fa-phone"></i> ${c.telefono}</p>
-          <p><i class="fas fa-envelope"></i> ${c.correo || "-"}</p>
-          <p><i class="fas fa-map-marker-alt"></i> ${c.direccion}</p>
-          <button class="btn btn-sm btn-outline-primary toggle-veh"><i class="fas fa-car"></i> Ver Vehículos</button>
-          <div class="vehiculos mt-2" style="display:none;">
-            ${c.vehiculo?.length ? c.vehiculo.map(v=>`<div><i class="fas fa-car-side"></i> ${v.marca} ${v.modelo} (${v.anio}) - ${v.matricula}</div>`).join("") : "<div class='no-vehiculos'>No tiene vehículos</div>"}
-          </div>
-        </div>`;
-      card.querySelector(".toggle-veh").addEventListener("click", () => {
-        const vehDiv = card.querySelector(".vehiculos");
-        vehDiv.style.display = vehDiv.style.display === "none" ? 'block' : 'none';
-      });
-      cont.appendChild(card);
-    });
-
-    const selVeh = document.getElementById("vehiculo-cliente-select");
-    if(selVeh){
-      selVeh.innerHTML = "<option value=''>-- Seleccione Cliente --</option>";
-      data.forEach(c => selVeh.innerHTML += `<option value="${c.id_cliente}">${c.nombre} ${c.apellido}</option>`);
-    }
-
-    const selOrden = document.getElementById("cliente-select");
-    if(selOrden){
-      selOrden.innerHTML = "<option value=''>-- Seleccione Cliente --</option>";
-      data.forEach(c => selOrden.innerHTML += `<option value="${c.id_cliente}">${c.nombre} ${c.apellido}</option>`);
-    }
-  }
-
-  async function cargarServicios() {
-    const { data, error } = await supabase.from("servicio").select("id_servicio, descripcion, costo");
-    if (error) return console.error(error);
-    serviciosGlobal = data;
-
-    const sel = document.getElementById("servicio-select");
-    if(sel){
-      sel.innerHTML = "<option value=''>-- Seleccione Servicio --</option>";
-      data.forEach(s => sel.innerHTML += `<option value="${s.id_servicio}" data-costo="${s.costo}">${s.descripcion} ($${s.costo})</option>`);
-    }
-  }
-
-  async function cargarOrdenes() {
-    const { data, error } = await supabase
-      .from("orden_trabajo")
-      .select(`
-        id_orden,
-        fecha_ingreso,
-        fecha_salida,
-        estado_pago,
-        vehiculo(id_vehiculo, marca, modelo, matricula, cliente(id_cliente, nombre, apellido)),
-        servicio(id_servicio, descripcion, costo)
-      `);
-    if (error) return console.error(error);
-
-    const pendientes = document.getElementById("pendientes");
-    const enProgreso = document.getElementById("en-progreso");
-    const completadas = document.getElementById("completadas");
-
-    pendientes.innerHTML = enProgreso.innerHTML = completadas.innerHTML = "";
-
-    data.forEach(o => {
-      const div = document.createElement("div");
-      div.className = "orden card p-3 mb-2 shadow-sm";
-      div.innerHTML = `
-        <strong>ID: ${o.id_orden}</strong><br>
-        <i class="fas fa-car"></i> ${o.vehiculo?.marca} ${o.vehiculo?.modelo} (${o.vehiculo?.matricula})<br>
-        <i class="fas fa-user"></i> ${o.vehiculo?.cliente?.nombre || "-"} ${o.vehiculo?.cliente?.apellido || ""}<br>
-        <i class="fas fa-wrench"></i> ${o.servicio?.descripcion || "-"} ($${o.servicio?.costo || 0})<br>
-        <i class="fas fa-clock"></i> Estado: ${o.estado_pago || "-"}
-      `;
-      if(o.estado_pago==="Pendiente") pendientes.appendChild(div);
-      else if(o.estado_pago==="En progreso") enProgreso.appendChild(div);
-      else completadas.appendChild(div);
+      selVeh.innerHTML += `<option value="${c.id_cliente}">${c.nombre} ${c.apellido}</option>`;
     });
   }
 
-  document.getElementById("cliente-select")?.addEventListener("change", e=>{
-    const clienteId = parseInt(e.target.value);
-    const cliente = clientesGlobal.find(c=>c.id_cliente===clienteId);
-    const vehSel = document.getElementById("vehiculo-select");
-    vehSel.innerHTML = "<option value=''>-- Seleccione Vehículo --</option>";
-    if(cliente?.vehiculo) cliente.vehiculo.forEach(v=>vehSel.innerHTML += `<option value="${v.id_vehiculo}">${v.marca} ${v.modelo} (${v.matricula})</option>`);
+  const selOrden = document.getElementById("cliente-select");
+  if (selOrden) {
+    selOrden.innerHTML = "<option value=''>-- Seleccione Cliente --</option>";
+    data.forEach(c => {
+      selOrden.innerHTML += `<option value="${c.id_cliente}">${c.nombre} ${c.apellido}</option>`;
+    });
+  }
+}
+
+async function cargarServicios() {
+  const { data, error } = await supabase.from("servicio").select("*");
+  if (error) return console.error(error);
+
+  serviciosGlobal = data;
+
+  const sel = document.getElementById("servicio-select");
+  if (!sel) return;
+
+  sel.innerHTML = "<option value=''>-- Seleccione Servicio --</option>";
+  data.forEach(s => {
+    sel.innerHTML += `<option value="${s.id_servicio}" data-costo="${s.costo}">
+      ${s.descripcion} ($${s.costo})
+    </option>`;
+  });
+}
+
+async function cargarOrdenes() {
+  const { data, error } = await supabase
+    .from("orden_trabajo")
+    .select(`
+      id_orden,
+      estado_pago,
+      vehiculo(marca, modelo, matricula, cliente(nombre, apellido)),
+      servicio(descripcion, costo)
+    `);
+
+  if (error) return console.error(error);
+
+  ["pendientes", "en-progreso", "completadas"].forEach(id => {
+    document.getElementById(id).innerHTML = "";
   });
 
-  document.getElementById("servicio-select")?.addEventListener("change", e=>{
-    const servicioId = parseInt(e.target.value);
-    const serv = serviciosGlobal.find(s=>s.id_servicio===servicioId);
-    document.getElementById("costo").value = serv ? `$${serv.costo}` : "";
-  });
+  data.forEach(o => {
+    const div = document.createElement("div");
+    div.className = "orden";
+    div.innerHTML = `
+      <strong>${o.vehiculo?.marca} ${o.vehiculo?.modelo}</strong><br>
+      Cliente: ${o.vehiculo?.cliente?.nombre || ""}<br>
+      Servicio: ${o.servicio?.descripcion || ""}<br>
+      Estado: ${o.estado_pago}
+    `;
 
-  document.getElementById("form-orden")?.addEventListener("submit", async e=>{
-    e.preventDefault();
-    const orden = {
-      id_vehiculo: parseInt(document.getElementById("vehiculo-select").value),
-      id_servicio: parseInt(document.getElementById("servicio-select").value),
-      fecha_ingreso: document.getElementById("fecha_ingreso").value,
-      fecha_salida: document.getElementById("fecha_salida").value,
-      estado_pago: document.getElementById("estado_pago").value
-    };
-    const { error } = await supabase.from("orden_trabajo").insert([orden]);
-    const msg = document.getElementById("mensaje-orden");
-    if(error) msg.innerHTML = `<p class="text-danger">Error: ${error.message}</p>`;
-    else {
-      msg.innerHTML = `<p class="text-success">Orden agregada exitosamente.</p>`;
-      document.getElementById("form-orden").reset();
-      document.getElementById("vehiculo-select").innerHTML = "<option value=''>-- Seleccione Vehículo --</option>";
-      document.getElementById("costo").value = "";
-      cargarOrdenes();
-    }
+    if (o.estado_pago === "Pendiente") document.getElementById("pendientes").appendChild(div);
+    else if (o.estado_pago === "En progreso") document.getElementById("en-progreso").appendChild(div);
+    else document.getElementById("completadas").appendChild(div);
   });
+}
 
-  document.getElementById("form-cliente")?.addEventListener("submit", async e=>{
-    e.preventDefault();
-    const cliente = {
-      nombre: document.getElementById("cliente-nombre").value,
-      apellido: document.getElementById("cliente-apellido").value,
-      telefono: document.getElementById("cliente-telefono").value,
-      correo: document.getElementById("cliente-correo").value,
-      direccion: document.getElementById("cliente-direccion").value,
-      estado: "ACTIVO"
-    };
-    const { data, error } = await supabase.from("cliente").insert([cliente]);
-    const msg = document.getElementById("mensaje-cliente");
-    if(error) msg.innerHTML = `<p class="text-danger">Error: ${error.message}</p>`;
-    else{
-      msg.innerHTML = `<p class="text-success">Cliente agregado exitosamente.</p>`;
-      document.getElementById("form-cliente").reset();
-      cargarClientes();
-    }
+document.getElementById("cliente-select")?.addEventListener("change", e => {
+  const cliente = clientesGlobal.find(c => c.id_cliente == e.target.value);
+  const vehSel = document.getElementById("vehiculo-select");
+  vehSel.innerHTML = "<option value=''>-- Seleccione Vehículo --</option>";
+  cliente?.vehiculo?.forEach(v => {
+    vehSel.innerHTML += `<option value="${v.id_vehiculo}">${v.marca} ${v.modelo}</option>`;
   });
+});
 
-  document.getElementById("form-vehiculo")?.addEventListener("submit", async e=>{
-    e.preventDefault();
-    const vehiculo = {
-      id_cliente: parseInt(document.getElementById("vehiculo-cliente-select").value),
-      marca: document.getElementById("vehiculo-nueva-marca").value,
-      modelo: document.getElementById("vehiculo-nueva-modelo").value,
-      matricula: document.getElementById("vehiculo-nueva-matricula").value,
-      anio: parseInt(document.getElementById("vehiculo-nueva-anio").value)
-    };
-    const msg = document.getElementById("mensaje-vehiculo");
-    if(!vehiculo.id_cliente){ msg.innerHTML="<p class='text-danger'>Seleccione un cliente</p>"; return; }
-    const { error } = await supabase.from("vehiculo").insert([vehiculo]);
-    if(error) msg.innerHTML = `<p class="text-danger">Error: ${error.message}</p>`;
-    else{
-      msg.innerHTML = `<p class="text-success">Vehículo agregado exitosamente.</p>`;
-      document.getElementById("form-vehiculo").reset();
-      cargarClientes();
-    }
-  });
-  cargarClientes();
-  cargarServicios();
-  cargarOrdenes();
+document.getElementById("servicio-select")?.addEventListener("change", e => {
+  const serv = serviciosGlobal.find(s => s.id_servicio == e.target.value);
+  document.getElementById("costo").value = serv ? `$${serv.costo}` : "";
+});
+
+mostrarSeccion("clientes");
+cargarClientes();
+cargarServicios();
+cargarOrdenes();
 </script>
+
 
 </body>
 </html>

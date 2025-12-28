@@ -32,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return
       }
 
-      
       window.location.href = 'index.html'
     } catch (err) {
       console.error(err)

@@ -39,3 +39,15 @@ if (loginForm) {
     }
   });
 }
+
+export function verificarSesion() {
+  const session = localStorage.getItem("usuarioSession");
+  if (!session) {
+    window.location.href = "login.html";
+  }
+}
+
+export function cerrarSesion() {
+  localStorage.removeItem("usuarioSession");
+  window.location.href = "login.html";
+}

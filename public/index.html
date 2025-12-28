@@ -23,6 +23,12 @@ async function verificarSesion() {
 }
 verificarSesion();
 
+window.cerrarSesion = async () => {
+  await supabase.auth.signOut();
+  localStorage.removeItem("supabaseSession");
+  window.location.href = "login.html";
+};
+
 
 document.getElementById("logout-btn").addEventListener("click", async () => {
   await supabase.auth.signOut();
@@ -71,7 +77,6 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
       cont.appendChild(card);
     });
 
-    // Selecciones de clientes
     const selVeh = document.getElementById("vehiculo-cliente-select");
     if(selVeh){
       selVeh.innerHTML = "<option value=''>-- Seleccione Cliente --</option>";

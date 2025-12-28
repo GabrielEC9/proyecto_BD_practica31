@@ -22,7 +22,6 @@ loginForm.addEventListener("submit", async (e) => {
       return;
     }
 
-
     localStorage.setItem("usuarioSession", JSON.stringify({
       usuario: data.usuario,
       loginAt: new Date().toISOString()

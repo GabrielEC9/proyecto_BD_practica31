@@ -6,6 +6,7 @@ const supabaseKey = process.env.SUPABASE_KEY
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('auth.js cargado');
   const form = document.getElementById('login-form')
   const errorMsg = document.getElementById('error-message')
 

@@ -1,8 +1,13 @@
+<<<<<<< HEAD
 import 'dotenv/config'
 import express from 'express'
 import { supabase } from './supabaseClient.js'
 import prisma from './prismaClient.js'
 import bcrypt from 'bcrypt'  // <-- Importamos bcrypt
+=======
+import express from 'express'
+import { supabase } from './supabaseClient.js'
+>>>>>>> 2e9ec9ec69639a0afd84dbdc1f2ac86bb4edaa46
 
 const app = express()
 const port = process.env.PORT || 3000
@@ -13,12 +18,17 @@ app.use(express.json())
 app.get('/api/clientes', async (req, res) => {
   const { data, error } = await supabase
     .from('cliente')
+<<<<<<< HEAD
     .select('*, vehiculo(*)')
 
   if (error) {
     return res.status(500).json({ error: error.message })
   }
 
+=======
+    .select(`*, vehiculo(*)`)
+  if (error) return res.status(500).json({ error: error.message })
+>>>>>>> 2e9ec9ec69639a0afd84dbdc1f2ac86bb4edaa46
   res.json(data)
 })
 
@@ -30,6 +40,7 @@ app.get('/api/ordenes', async (req, res) => {
       vehiculo(*),
       servicio(*)
     `)
+<<<<<<< HEAD
 
   if (error) {
     return res.status(500).json({ error: error.message })
@@ -68,6 +79,12 @@ app.post('/api/login-orm', async (req, res) => {
   }
 })
 
+=======
+  if (error) return res.status(500).json({ error: error.message })
+  res.json(data)
+})
+
+>>>>>>> 2e9ec9ec69639a0afd84dbdc1f2ac86bb4edaa46
 app.listen(port, () => {
   console.log(`Servidor corriendo en http://localhost:${port}`)
 })

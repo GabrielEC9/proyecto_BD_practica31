@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -360,3 +361,367 @@
 </html>
 
 
+=======
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taller Automotriz</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+  const SUPABASE_URL = "https://lvuqrksujmgwgvebokgw.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2dXFya3N1am1nd2d2ZWJva2d3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxNzA0NzIsImV4cCI6MjA3NTc0NjQ3Mn0.-r4fp5yQi1pH2qHmbEbhm-6Q_4WgXc_yrr3JQZpGJV4";
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  async function verificarSesion() {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) window.location.href = "login.html";
+  }
+  verificarSesion();
+
+  window.cerrarSesion = async () => {
+    await supabase.auth.signOut();
+    window.location.href = "login.html";
+  }
+
+  window.mostrarSeccion = (seccion) => {
+    ['clientes', 'ordenes', 'nueva-orden', 'nuevo-cliente', 'nuevo-vehiculo'].forEach(s => {
+      document.getElementById(`${s}-section`).style.display = s === seccion ? 'block' : 'none';
+    });
+  }
+
+  let clientesGlobal = [];
+  let serviciosGlobal = [];
+
+  async function cargarClientes() {
+    const { data, error } = await supabase
+      .from("cliente")
+      .select("id_cliente, nombre, apellido, telefono, direccion, correo, vehiculo(id_vehiculo, marca, modelo, matricula, anio)");
+
+    if (error) return console.error(error);
+    clientesGlobal = data;
+
+    const cont = document.getElementById("clientes-container");
+    cont.innerHTML = "";
+    data.forEach(c => {
+      const card = document.createElement("div");
+      card.className = "col-md-4";
+      card.innerHTML = `
+        <div class="card p-3 shadow-sm mb-3">
+          <h5><i class="fas fa-user"></i> ${c.nombre} ${c.apellido || ""}</h5>
+          <p><i class="fas fa-phone"></i> ${c.telefono}</p>
+          <p><i class="fas fa-envelope"></i> ${c.correo || "-"}</p>
+          <p><i class="fas fa-map-marker-alt"></i> ${c.direccion}</p>
+          <button class="btn btn-sm btn-outline-primary toggle-veh"><i class="fas fa-car"></i> Ver Vehículos</button>
+          <div class="vehiculos mt-2" style="display:none;">
+            ${c.vehiculo?.length ? c.vehiculo.map(v=>`<div><i class="fas fa-car-side"></i> ${v.marca} ${v.modelo} (${v.anio}) - ${v.matricula}</div>`).join("") : "<div class='no-vehiculos'>No tiene vehículos</div>"}
+          </div>
+        </div>`;
+      card.querySelector(".toggle-veh").addEventListener("click", () => {
+        const vehDiv = card.querySelector(".vehiculos");
+        vehDiv.style.display = vehDiv.style.display === "none" ? 'block' : 'none';
+      });
+      cont.appendChild(card);
+    });
+
+    const selVeh = document.getElementById("vehiculo-cliente-select");
+    if(selVeh){
+      selVeh.innerHTML = "<option value=''>-- Seleccione Cliente --</option>";
+      data.forEach(c => selVeh.innerHTML += `<option value="${c.id_cliente}">${c.nombre} ${c.apellido}</option>`);
+    }
+
+    const selOrden = document.getElementById("cliente-select");
+    if(selOrden){
+      selOrden.innerHTML = "<option value=''>-- Seleccione Cliente --</option>";
+      data.forEach(c => selOrden.innerHTML += `<option value="${c.id_cliente}">${c.nombre} ${c.apellido}</option>`);
+    }
+  }
+
+  async function cargarServicios() {
+    const { data, error } = await supabase.from("servicio").select("id_servicio, descripcion, costo");
+    if (error) return console.error(error);
+    serviciosGlobal = data;
+
+    const sel = document.getElementById("servicio-select");
+    if(sel){
+      sel.innerHTML = "<option value=''>-- Seleccione Servicio --</option>";
+      data.forEach(s => sel.innerHTML += `<option value="${s.id_servicio}" data-costo="${s.costo}">${s.descripcion} ($${s.costo})</option>`);
+    }
+  }
+
+  async function cargarOrdenes() {
+    const { data, error } = await supabase
+      .from("orden_trabajo")
+      .select(`
+        id_orden,
+        fecha_ingreso,
+        fecha_salida,
+        estado_pago,
+        vehiculo(id_vehiculo, marca, modelo, matricula, cliente(id_cliente, nombre, apellido)),
+        servicio(id_servicio, descripcion, costo)
+      `);
+    if (error) return console.error(error);
+
+    const pendientes = document.getElementById("pendientes");
+    const enProgreso = document.getElementById("en-progreso");
+    const completadas = document.getElementById("completadas");
+
+    pendientes.innerHTML = enProgreso.innerHTML = completadas.innerHTML = "";
+
+    data.forEach(o => {
+      const div = document.createElement("div");
+      div.className = "orden card p-3 mb-2 shadow-sm";
+      div.innerHTML = `
+        <strong>ID: ${o.id_orden}</strong><br>
+        <i class="fas fa-car"></i> ${o.vehiculo?.marca} ${o.vehiculo?.modelo} (${o.vehiculo?.matricula})<br>
+        <i class="fas fa-user"></i> ${o.vehiculo?.cliente?.nombre || "-"} ${o.vehiculo?.cliente?.apellido || ""}<br>
+        <i class="fas fa-wrench"></i> ${o.servicio?.descripcion || "-"} ($${o.servicio?.costo || 0})<br>
+        <i class="fas fa-clock"></i> Estado: ${o.estado_pago || "-"}
+      `;
+      if(o.estado_pago==="Pendiente") pendientes.appendChild(div);
+      else if(o.estado_pago==="En progreso") enProgreso.appendChild(div);
+      else completadas.appendChild(div);
+    });
+  }
+
+  document.getElementById("cliente-select")?.addEventListener("change", e=>{
+    const clienteId = parseInt(e.target.value);
+    const cliente = clientesGlobal.find(c=>c.id_cliente===clienteId);
+    const vehSel = document.getElementById("vehiculo-select");
+    vehSel.innerHTML = "<option value=''>-- Seleccione Vehículo --</option>";
+    if(cliente?.vehiculo) cliente.vehiculo.forEach(v=>vehSel.innerHTML += `<option value="${v.id_vehiculo}">${v.marca} ${v.modelo} (${v.matricula})</option>`);
+  });
+
+  document.getElementById("servicio-select")?.addEventListener("change", e=>{
+    const servicioId = parseInt(e.target.value);
+    const serv = serviciosGlobal.find(s=>s.id_servicio===servicioId);
+    document.getElementById("costo").value = serv ? `$${serv.costo}` : "";
+  });
+
+  document.getElementById("form-orden")?.addEventListener("submit", async e=>{
+    e.preventDefault();
+    const orden = {
+      id_vehiculo: parseInt(document.getElementById("vehiculo-select").value),
+      id_servicio: parseInt(document.getElementById("servicio-select").value),
+      fecha_ingreso: document.getElementById("fecha_ingreso").value,
+      fecha_salida: document.getElementById("fecha_salida").value,
+      estado_pago: document.getElementById("estado_pago").value
+    };
+    const { error } = await supabase.from("orden_trabajo").insert([orden]);
+    const msg = document.getElementById("mensaje-orden");
+    if(error) msg.innerHTML = `<p class="text-danger">Error: ${error.message}</p>`;
+    else {
+      msg.innerHTML = `<p class="text-success">Orden agregada exitosamente.</p>`;
+      document.getElementById("form-orden").reset();
+      document.getElementById("vehiculo-select").innerHTML = "<option value=''>-- Seleccione Vehículo --</option>";
+      document.getElementById("costo").value = "";
+      cargarOrdenes();
+    }
+  });
+
+  document.getElementById("form-cliente")?.addEventListener("submit", async e=>{
+    e.preventDefault();
+    const cliente = {
+      nombre: document.getElementById("cliente-nombre").value,
+      apellido: document.getElementById("cliente-apellido").value,
+      telefono: document.getElementById("cliente-telefono").value,
+      correo: document.getElementById("cliente-correo").value,
+      direccion: document.getElementById("cliente-direccion").value,
+      estado: "ACTIVO"
+    };
+    const { data, error } = await supabase.from("cliente").insert([cliente]);
+    const msg = document.getElementById("mensaje-cliente");
+    if(error) msg.innerHTML = `<p class="text-danger">Error: ${error.message}</p>`;
+    else{
+      msg.innerHTML = `<p class="text-success">Cliente agregado exitosamente.</p>`;
+      document.getElementById("form-cliente").reset();
+      cargarClientes();
+    }
+  });
+
+  document.getElementById("form-vehiculo")?.addEventListener("submit", async e=>{
+    e.preventDefault();
+    const vehiculo = {
+      id_cliente: parseInt(document.getElementById("vehiculo-cliente-select").value),
+      marca: document.getElementById("vehiculo-nueva-marca").value,
+      modelo: document.getElementById("vehiculo-nueva-modelo").value,
+      matricula: document.getElementById("vehiculo-nueva-matricula").value,
+      anio: parseInt(document.getElementById("vehiculo-nueva-anio").value)
+    };
+    const msg = document.getElementById("mensaje-vehiculo");
+    if(!vehiculo.id_cliente){ msg.innerHTML="<p class='text-danger'>Seleccione un cliente</p>"; return; }
+    const { error } = await supabase.from("vehiculo").insert([vehiculo]);
+    if(error) msg.innerHTML = `<p class="text-danger">Error: ${error.message}</p>`;
+    else{
+      msg.innerHTML = `<p class="text-success">Vehículo agregado exitosamente.</p>`;
+      document.getElementById("form-vehiculo").reset();
+      cargarClientes();
+    }
+  });
+
+  cargarClientes();
+  cargarServicios();
+  cargarOrdenes();
+</script>
+
+<style>
+  body { background: #f4f6f9; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+  h1 { text-align: center; margin-bottom: 30px; color: #222; font-weight: bold; }
+  .menu { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
+  .card { transition: transform 0.2s; border-radius: 10px; }
+  .card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+  .vehiculos { margin-top: 10px; padding-left: 15px; }
+  .orden { padding: 15px; margin-bottom: 12px; border-radius: 10px; background: #fff; box-shadow: 0 3px 10px rgba(0,0,0,0.05); transition: transform 0.2s; }
+  .orden:hover { transform: scale(1.02); }
+  .tablero { display: flex; gap: 20px; flex-wrap: wrap; }
+  .columna { flex: 1; min-width: 280px; }
+  .no-vehiculos { font-style: italic; color: #777; }
+  .logout-btn { position: absolute; top: 20px; right: 20px; }
+  form { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+</style>
+</head>
+<body>
+
+<button class="btn btn-danger logout-btn" onclick="cerrarSesion()"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</button>
+
+<h1><i class="fas fa-tools"></i> Taller Automotriz</h1>
+
+<div class="menu">
+  <button class="btn btn-primary" onclick="mostrarSeccion('clientes')"><i class="fas fa-users"></i> Clientes</button>
+  <button class="btn btn-secondary" onclick="mostrarSeccion('ordenes')"><i class="fas fa-clipboard-list"></i> Órdenes de Trabajo</button>
+  <button class="btn btn-success" onclick="mostrarSeccion('nueva-orden')"><i class="fas fa-plus-circle"></i> Nueva Orden</button>
+  <button class="btn btn-info text-white" onclick="mostrarSeccion('nuevo-cliente')"><i class="fas fa-user-plus"></i> Nuevo Cliente</button>
+  <button class="btn btn-warning text-white" onclick="mostrarSeccion('nuevo-vehiculo')"><i class="fas fa-car-side"></i> Nuevo Vehículo</button>
+</div>
+
+<div class="container">
+
+  <div id="clientes-section">
+    <h2>Clientes y Vehículos</h2>
+    <div id="clientes-container" class="row"></div>
+  </div>
+
+  <div id="ordenes-section" style="display:none;">
+    <h2>Órdenes de Trabajo</h2>
+    <div class="tablero">
+      <div class="columna">
+        <h5>Pendientes</h5>
+        <div id="pendientes"></div>
+      </div>
+      <div class="columna">
+        <h5>En Progreso</h5>
+        <div id="en-progreso"></div>
+      </div>
+      <div class="columna">
+        <h5>Completadas</h5>
+        <div id="completadas"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="nueva-orden-section" style="display:none;">
+    <h2>Registrar Nueva Orden de Trabajo</h2>
+    <form id="form-orden">
+      <div class="mb-3">
+        <label class="form-label">Cliente</label>
+        <select id="cliente-select" class="form-select" required></select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Vehículo</label>
+        <select id="vehiculo-select" class="form-select" required></select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Servicio</label>
+        <select id="servicio-select" class="form-select" required></select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Fecha de ingreso</label>
+        <input type="date" id="fecha_ingreso" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Fecha de salida</label>
+        <input type="date" id="fecha_salida" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Costo</label>
+        <input type="text" id="costo" class="form-control" readonly>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Estado de pago</label>
+        <select id="estado_pago" class="form-select" required>
+          <option value="Pendiente">Pendiente</option>
+          <option value="En progreso">En progreso</option>
+          <option value="Completada">Completada</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-success w-100"><i class="fas fa-save"></i> Guardar Orden</button>
+    </form>
+    <div id="mensaje-orden" class="mt-3"></div>
+  </div>
+
+  <div id="nuevo-cliente-section" style="display:none;">
+    <h2>Registrar Nuevo Cliente</h2>
+    <form id="form-cliente">
+      <div class="mb-3">
+        <label class="form-label">Nombre</label>
+        <input type="text" id="cliente-nombre" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Apellido</label>
+        <input type="text" id="cliente-apellido" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Teléfono</label>
+        <input type="text" id="cliente-telefono" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Correo</label>
+        <input type="email" id="cliente-correo" class="form-control">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Dirección</label>
+        <input type="text" id="cliente-direccion" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-info w-100 text-white"><i class="fas fa-save"></i> Guardar Cliente</button>
+    </form>
+    <div id="mensaje-cliente" class="mt-3"></div>
+  </div>
+
+  <div id="nuevo-vehiculo-section" style="display:none;">
+    <h2>Registrar Nuevo Vehículo</h2>
+    <form id="form-vehiculo">
+      <div class="mb-3">
+        <label class="form-label">Cliente</label>
+        <select id="vehiculo-cliente-select" class="form-select" required></select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Marca</label>
+        <input type="text" id="vehiculo-nueva-marca" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Modelo</label>
+        <input type="text" id="vehiculo-nueva-modelo" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Matrícula</label>
+        <input type="text" id="vehiculo-nueva-matricula" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Año</label>
+        <input type="number" id="vehiculo-nueva-anio" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-warning w-100 text-white"><i class="fas fa-save"></i> Guardar Vehículo</button>
+    </form>
+    <div id="mensaje-vehiculo" class="mt-3"></div>
+  </div>
+
+</div>
+</body>
+</html>
+
+
+>>>>>>> 2e9ec9ec69639a0afd84dbdc1f2ac86bb4edaa46

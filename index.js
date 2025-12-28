@@ -7,11 +7,23 @@ import cors from 'cors'
 const app = express()
 const port = process.env.PORT || 3000
 
-app.use(cors()) // permitir solicitudes desde cualquier origen
+app.use(cors()) 
 app.use(express.static('public'))
 app.use(express.json())
 
-// Endpoint de login usando Prisma ORM
+import 'dotenv/config'
+import express from 'express'
+import prisma from './prismaClient.js'
+import bcrypt from 'bcrypt'
+import cors from 'cors'
+
+const app = express()
+const port = process.env.PORT || 3000
+
+app.use(cors())
+app.use(express.static('public'))
+app.use(express.json())
+
 app.post('/api/login-orm', async (req, res) => {
   const { usuario, password } = req.body
 
@@ -30,13 +42,26 @@ app.post('/api/login-orm', async (req, res) => {
     }
 
     res.json({
-      mensaje: 'Login exitoso',
+      mensaje: 'Login exitoso usando ORM (Prisma)',
       usuario: user.usuario
     })
+
   } catch (error) {
     console.error(error)
-    res.status(500).json({ error: 'Error interno del servidor' })
+    res.status(500).json({ error: error.message })
   }
+})
+
+app.get('/api/clientes', async (req, res) => {
+  const clientes = await prisma.cliente.findMany({ include: { vehiculo: true } })
+  res.json(clientes)
+})
+
+app.get('/api/ordenes', async (req, res) => {
+  const ordenes = await prisma.orden_trabajo.findMany({ 
+    include: { vehiculo: true, servicio: true } 
+  })
+  res.json(ordenes)
 })
 
 app.listen(port, () => {

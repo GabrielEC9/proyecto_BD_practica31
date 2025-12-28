@@ -8,22 +8,26 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
 <script type="module" src="./auth.js"></script>
 <script type="module">
-window.addEventListener('DOMContentLoaded', () => {
-  const session = localStorage.getItem('usuarioSession');
-  if (!session) {
-    // Si no hay sesión activa, redirige al login
-    window.location.href = 'login.html';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+const SUPABASE_URL = "https://lvuqrksujmgwgvebokgw.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2dXFya3N1am1nd2d2ZWJva2d3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxNzA0NzIsImV4cCI6MjA3NTc0NjQ3Mn0.-r4fp5yQi1pH2qHmbEbhm-6Q_4WgXc_yrr3JQZpGJV4"; 
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
+async function verificarSesion() {
+  const { data } = await supabase.auth.getSession();
+  if (!data.session) {
+    window.location.href = "login.html";
   }
-});
-
-// Función de cerrar sesión
-function cerrarSesion() {
-  localStorage.removeItem('usuarioSession');
-  window.location.href = 'login.html';
 }
+verificarSesion();
 
-// Hacemos global la función para el botón logout
-window.cerrarSesion = cerrarSesion;
+window.cerrarSesion = async () => {
+  await supabase.auth.signOut();
+  localStorage.removeItem("supabaseSession");
+  window.location.href = "login.html";
+};
 
 
 document.getElementById("logout-btn").addEventListener("click", async () => {

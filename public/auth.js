@@ -18,18 +18,16 @@ document.addEventListener('DOMContentLoaded', () => {
     errorMsg.classList.add('hidden')
 
     try {
-      const res = await fetch('/api/login-orm', {
+      const res = await fetch('/api/login', { 
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ usuario, password })
       })
 
       const data = await res.json()
 
       if (!res.ok) {
-        errorMsg.textContent = data.error || 'Correo o contraseña incorrectos.'
+        errorMsg.textContent = data.error || 'Usuario o contraseña incorrectos.'
         errorMsg.classList.remove('hidden')
         return
       }

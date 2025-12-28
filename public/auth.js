@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return
       }
 
+      localStorage.setItem('usuario', data.usuario)
       window.location.href = 'index.html'
 
     } catch (err) {
@@ -34,3 +35,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   })
 })
+
+window.cerrarSesion = () => {
+  localStorage.removeItem('usuario')
+  window.location.href = 'login.html'
+}
+
+window.verificarSesion = () => {
+  const usuario = localStorage.getItem('usuario')
+  if (!usuario) window.location.href = 'login.html'
+}

@@ -63,6 +63,12 @@ app.post('/api/login', async (req, res) => {
   }
 })
 
+app.get('/api/check-session', (req, res) => {
+  const user = req.headers['x-usuario'] || null
+  if (!user) return res.status(401).json({ error: 'No autenticado' })
+  res.json({ usuario: user })
+})
+
 app.listen(port, () => {
   console.log(`Servidor corriendo en http://localhost:${port}`)
 })

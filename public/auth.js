@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault()
-
     const usuario = document.getElementById('email').value
     const password = document.getElementById('password').value
 
@@ -19,28 +18,28 @@ document.addEventListener('DOMContentLoaded', () => {
     errorMsg.classList.add('hidden')
 
     try {
-      const res = await fetch('/api/login', {
+      const res = await fetch('/api/login-orm', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ usuario, password })
       })
 
       const data = await res.json()
 
       if (!res.ok) {
-        errorMsg.textContent = data.error
+        errorMsg.textContent = data.error || 'Correo o contraseña incorrectos.'
         errorMsg.classList.remove('hidden')
         return
       }
 
-      // Login exitoso
       window.location.href = 'index.html'
+
     } catch (err) {
       console.error(err)
-      errorMsg.textContent = 'Error de conexión con el servidor'
+      errorMsg.textContent = 'Error del servidor. Intenta más tarde.'
       errorMsg.classList.remove('hidden')
     }
   })
 })
-
-

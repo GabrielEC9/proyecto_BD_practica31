@@ -29,7 +29,8 @@ loginForm?.addEventListener("submit", async (e) => {
   }
 
 
-  const valid = dcodeIO.bcrypt.compareSync(password, data.password);
+  const valid = bcrypt.compareSync(password, data.password);
+
 
   if (!valid) {
     errorMessage.textContent = "Contraseña incorrecta";

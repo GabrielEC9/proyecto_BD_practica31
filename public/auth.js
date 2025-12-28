@@ -12,33 +12,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault()
-    const email = document.getElementById('email').value
+    const usuario = document.getElementById('email').value
     const password = document.getElementById('password').value
 
     errorMsg.textContent = ''
     errorMsg.classList.add('hidden')
 
-    const { data, error } = await supabase
-      .from('UsuarioORM')
-      .select('*')
-      .eq('usuario', email)
-      .single()
+    try {
+      const res = await fetch('/api/login-orm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario, password })
+      })
 
-    if (error || !data) {
-      errorMsg.textContent = 'Correo o contraseña incorrectos.'
+      const data = await res.json()
+
+      if (!res.ok) {
+        errorMsg.textContent = data.error || 'Correo o contraseña incorrectos.'
+        errorMsg.classList.remove('hidden')
+        return
+      }
+
+      window.location.href = 'index.html'
+
+    } catch (err) {
+      console.error(err)
+      errorMsg.textContent = 'Ocurrió un error al iniciar sesión.'
       errorMsg.classList.remove('hidden')
-      return
     }
-
-    // Comparar contraseña
-    const isValid = await bcrypt.compare(password, data.password)
-    if (!isValid) {
-      errorMsg.textContent = 'Correo o contraseña incorrectos.'
-      errorMsg.classList.remove('hidden')
-      return
-    }
-
-  
-    window.location.href = 'index.html'
   })
 })
+

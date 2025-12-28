@@ -181,11 +181,25 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
 
   window.cerrarSesion = cerrarSesion;
 
-  window.mostrarSeccion = (seccion) => {
-    ['clientes', 'ordenes', 'nueva-orden', 'nuevo-cliente', 'nuevo-vehiculo'].forEach(s => {
-      document.getElementById(`${s}-section`).style.display = s === seccion ? 'block' : 'none';
-    });
-  }
+window.mostrarSeccion = (seccion) => {
+  const secciones = [
+    'clientes-section',
+    'ordenes-section',
+    'nueva-orden-section',
+    'nuevo-cliente-section',
+    'nuevo-vehiculo-section'
+  ];
+
+  secciones.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    el.style.display = (id === `${seccion}-section`)
+      ? 'block'
+      : 'none';
+  });
+};
+
 
   let clientesGlobal = [];
   let serviciosGlobal = [];

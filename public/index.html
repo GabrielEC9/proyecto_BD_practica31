@@ -6,14 +6,13 @@
 <title>Taller Automotriz</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+<script type="module" src="./auth.js"></script>
 <script type="module">
+  import { supabase, verificarSesion, cerrarSesion } from './auth.js';
 
   verificarSesion();
 
-  window.cerrarSesion = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "login.html";
-  }
+  window.cerrarSesion = cerrarSesion;
 
   window.mostrarSeccion = (seccion) => {
     ['clientes', 'ordenes', 'nueva-orden', 'nuevo-cliente', 'nuevo-vehiculo'].forEach(s => {
@@ -28,7 +27,6 @@
     const { data, error } = await supabase
       .from("cliente")
       .select("id_cliente, nombre, apellido, telefono, direccion, correo, vehiculo(id_vehiculo, marca, modelo, matricula, anio)");
-
     if (error) return console.error(error);
     clientesGlobal = data;
 
@@ -55,6 +53,7 @@
       cont.appendChild(card);
     });
 
+    // Selecciones de clientes
     const selVeh = document.getElementById("vehiculo-cliente-select");
     if(selVeh){
       selVeh.innerHTML = "<option value=''>-- Seleccione Cliente --</option>";
@@ -189,7 +188,6 @@
       cargarClientes();
     }
   });
-
   cargarClientes();
   cargarServicios();
   cargarOrdenes();

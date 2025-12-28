@@ -32,11 +32,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return
       }
 
+
       window.location.href = 'index.html'
     } catch (err) {
       console.error(err)
-      errorMsg.textContent = 'Ocurrió un error. Intenta nuevamente.'
+      errorMsg.textContent = 'Ocurrió un error de conexión. Intenta nuevamente.'
       errorMsg.classList.remove('hidden')
     }
   })
 })
+

@@ -1,35 +1,59 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+import prisma from './prismaClient.js'
+import bcrypt from 'bcryptjs'
 
+const loginForm = document.getElementById("login-form")
+const errorMessage = document.getElementById("error-message")
 
-const SUPABASE_URL = "https://lvuqrksujmgwgvebokgw.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2dXFya3N1am1nd2d2ZWJva2d3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxNzA0NzIsImV4cCI6MjA3NTc0NjQ3Mn0.-r4fp5yQi1pH2qHmbEbhm-6Q_4WgXc_yrr3JQZpGJV4";
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+loginForm?.addEventListener("submit", async (e) => {
+  e.preventDefault()
+  const email = document.getElementById("email").value
+  const password = document.getElementById("password").value
 
-const loginForm = document.getElementById("login-form");
-const errorMessage = document.getElementById("error-message");
+  try {
+    const usuario = await prisma.usuario.findUnique({
+      where: { email }
+    })
 
+    if (!usuario) {
+      errorMessage.textContent = "Usuario no encontrado"
+      errorMessage.classList.remove("hidden")
+      return
+    }
 
-async function checkLoggedIn() {
-  const { data } = await supabase.auth.getSession();
-  if (data.session) window.location.href = "index.html";
-}
-checkLoggedIn();
+    const validPassword = await bcrypt.compare(password, usuario.passwordHash)
+    if (!validPassword) {
+      errorMessage.textContent = "Contraseña incorrecta"
+      errorMessage.classList.remove("hidden")
+      return
+    }
 
+    localStorage.setItem("userSession", JSON.stringify({
+      id: usuario.id,
+      email: usuario.email,
+      nombre: usuario.nombre
+    }))
 
-loginForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+    errorMessage.classList.add("hidden")
+    window.location.href = "index.html"
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-  if (error) {
-    errorMessage.textContent = error.message;
-    errorMessage.classList.remove("hidden");
-  } else {
-    errorMessage.classList.add("hidden");
-    localStorage.setItem("supabaseSession", JSON.stringify(data.session));
-    window.location.href = "index.html";
+  } catch (err) {
+    console.error(err)
+    errorMessage.textContent = "Error al iniciar sesión"
+    errorMessage.classList.remove("hidden")
   }
-});
+})
+
+
+export function verificarSesion() {
+  const session = localStorage.getItem("userSession")
+  if (!session) {
+    window.location.href = "login.html"
+  }
+}
+
+
+export function cerrarSesion() {
+  localStorage.removeItem("userSession")
+  window.location.href = "login.html"
+}
 

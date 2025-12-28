@@ -322,6 +322,67 @@ document.getElementById("servicio-select")?.addEventListener("change", e => {
   document.getElementById("costo").value = serv ? `$${serv.costo}` : "";
 });
 
+document.getElementById("form-orden")?.addEventListener("submit", async e=>{
+    e.preventDefault();
+    const orden = {
+      id_vehiculo: parseInt(document.getElementById("vehiculo-select").value),
+      id_servicio: parseInt(document.getElementById("servicio-select").value),
+      fecha_ingreso: document.getElementById("fecha_ingreso").value,
+      fecha_salida: document.getElementById("fecha_salida").value,
+      estado_pago: document.getElementById("estado_pago").value
+    };
+    const { error } = await supabase.from("orden_trabajo").insert([orden]);
+    const msg = document.getElementById("mensaje-orden");
+    if(error) msg.innerHTML = `<p class="text-danger">Error: ${error.message}</p>`;
+    else {
+      msg.innerHTML = `<p class="text-success">Orden agregada exitosamente.</p>`;
+      document.getElementById("form-orden").reset();
+      document.getElementById("vehiculo-select").innerHTML = "<option value=''>-- Seleccione Vehículo --</option>";
+      document.getElementById("costo").value = "";
+      cargarOrdenes();
+    }
+  });
+
+  document.getElementById("form-cliente")?.addEventListener("submit", async e=>{
+    e.preventDefault();
+    const cliente = {
+      nombre: document.getElementById("cliente-nombre").value,
+      apellido: document.getElementById("cliente-apellido").value,
+      telefono: document.getElementById("cliente-telefono").value,
+      correo: document.getElementById("cliente-correo").value,
+      direccion: document.getElementById("cliente-direccion").value,
+      estado: "ACTIVO"
+    };
+    const { data, error } = await supabase.from("cliente").insert([cliente]);
+    const msg = document.getElementById("mensaje-cliente");
+    if(error) msg.innerHTML = `<p class="text-danger">Error: ${error.message}</p>`;
+    else{
+      msg.innerHTML = `<p class="text-success">Cliente agregado exitosamente.</p>`;
+      document.getElementById("form-cliente").reset();
+      cargarClientes();
+    }
+  });
+
+  document.getElementById("form-vehiculo")?.addEventListener("submit", async e=>{
+    e.preventDefault();
+    const vehiculo = {
+      id_cliente: parseInt(document.getElementById("vehiculo-cliente-select").value),
+      marca: document.getElementById("vehiculo-nueva-marca").value,
+      modelo: document.getElementById("vehiculo-nueva-modelo").value,
+      matricula: document.getElementById("vehiculo-nueva-matricula").value,
+      anio: parseInt(document.getElementById("vehiculo-nueva-anio").value)
+    };
+    const msg = document.getElementById("mensaje-vehiculo");
+    if(!vehiculo.id_cliente){ msg.innerHTML="<p class='text-danger'>Seleccione un cliente</p>"; return; }
+    const { error } = await supabase.from("vehiculo").insert([vehiculo]);
+    if(error) msg.innerHTML = `<p class="text-danger">Error: ${error.message}</p>`;
+    else{
+      msg.innerHTML = `<p class="text-success">Vehículo agregado exitosamente.</p>`;
+      document.getElementById("form-vehiculo").reset();
+      cargarClientes();
+    }
+  });
+
 mostrarSeccion("clientes");
 cargarClientes();
 cargarServicios();
